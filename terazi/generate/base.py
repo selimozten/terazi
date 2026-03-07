@@ -16,7 +16,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 
 console = Console()
 
-DEFAULT_MODEL_ID = "us.anthropic.claude-opus-4-6-20250515-v1:0"
+DEFAULT_MODEL_ID = "us.anthropic.claude-opus-4-6-v1"
 DEFAULT_REGION = "us-east-1"
 MAX_RETRIES = 5
 BASE_DELAY = 2.0
@@ -70,26 +70,24 @@ class BaseGenerator(ABC):
         return count
 
     def _call_bedrock(self, system_prompt: str, user_prompt: str) -> str:
-        """Call Claude via Bedrock API key auth with retry logic."""
-        url = f"{self.base_url}/model/{self.model_id}/invoke"
+        """Call Claude via Bedrock Converse API with API key auth and retry logic."""
+        url = f"{self.base_url}/model/{self.model_id}/converse"
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {self.api_key}",
         }
-        payload = json.dumps(
-            {
-                "anthropic_version": "bedrock-2023-05-31",
-                "max_tokens": self.max_tokens,
+        payload = {
+            "system": [{"text": system_prompt}],
+            "messages": [{"role": "user", "content": [{"text": user_prompt}]}],
+            "inferenceConfig": {
+                "maxTokens": self.max_tokens,
                 "temperature": self.temperature,
-                "system": system_prompt,
-                "messages": [{"role": "user", "content": user_prompt}],
             },
-            ensure_ascii=False,
-        )
+        }
 
         for attempt in range(MAX_RETRIES):
             try:
-                response = httpx.post(url, content=payload, headers=headers, timeout=120)
+                response = httpx.post(url, json=payload, headers=headers, timeout=120)
                 if response.status_code == 429:
                     delay = BASE_DELAY * (2**attempt)
                     console.print(f"[yellow]Rate limited, retrying in {delay:.0f}s...[/yellow]")
@@ -97,7 +95,7 @@ class BaseGenerator(ABC):
                     continue
                 response.raise_for_status()
                 result = response.json()
-                return result["content"][0]["text"]
+                return result["output"]["message"]["content"][0]["text"]
             except httpx.HTTPStatusError as e:
                 if attempt < MAX_RETRIES - 1:
                     delay = BASE_DELAY * (2**attempt)
