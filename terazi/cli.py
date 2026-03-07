@@ -31,16 +31,28 @@ def cli() -> None:
 @click.option("--batch-size", "-b", type=int, default=5)
 @click.option("--output-dir", "-o", type=click.Path(), default="data")
 @click.option("--region", type=str, default="us-east-1")
-def generate(category: str, num_examples: int, batch_size: int, output_dir: str, region: str) -> None:
+@click.option("--model-id", type=str, default=None, help="Override Bedrock model ID")
+def generate(
+    category: str,
+    num_examples: int,
+    batch_size: int,
+    output_dir: str,
+    region: str,
+    model_id: str | None,
+) -> None:
     """Generate benchmark data using Claude via AWS Bedrock."""
     categories = ["core", "tool", "fin", "legal"] if category == "all" else [category]
     output_path = Path(output_dir)
+
+    kwargs: dict = {"output_dir": output_path, "region": region}
+    if model_id:
+        kwargs["model_id"] = model_id
 
     for cat in categories:
         module_path, class_name = GENERATORS[cat].rsplit(":", 1)
         module = importlib.import_module(module_path)
         generator_cls = getattr(module, class_name)
-        generator = generator_cls(output_dir=output_path, region=region)
+        generator = generator_cls(**kwargs)
         generator.generate(num_examples=num_examples, batch_size=batch_size)
 
 
