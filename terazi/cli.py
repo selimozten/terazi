@@ -32,6 +32,7 @@ def cli() -> None:
 @click.option("--output-dir", "-o", type=click.Path(), default="data")
 @click.option("--region", type=str, default="us-east-1")
 @click.option("--model-id", type=str, default=None, help="Override Bedrock model ID")
+@click.option("--api-key", type=str, default=None, help="Bedrock API key (or set AWS_BEDROCK_API_KEY)")
 def generate(
     category: str,
     num_examples: int,
@@ -39,6 +40,7 @@ def generate(
     output_dir: str,
     region: str,
     model_id: str | None,
+    api_key: str | None,
 ) -> None:
     """Generate benchmark data using Claude via AWS Bedrock."""
     categories = ["core", "tool", "fin", "legal"] if category == "all" else [category]
@@ -47,6 +49,8 @@ def generate(
     kwargs: dict = {"output_dir": output_path, "region": region}
     if model_id:
         kwargs["model_id"] = model_id
+    if api_key:
+        kwargs["api_key"] = api_key
 
     for cat in categories:
         module_path, class_name = GENERATORS[cat].rsplit(":", 1)

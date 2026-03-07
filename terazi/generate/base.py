@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import json
+import os
 import time
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
 
-import boto3
-from botocore.exceptions import ClientError
+import httpx
 from pydantic import BaseModel
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
@@ -44,6 +44,7 @@ class BaseGenerator(ABC):
         region: str = DEFAULT_REGION,
         max_tokens: int = 4096,
         temperature: float = 1.0,
+        api_key: str | None = None,
     ) -> None:
         self.output_dir = output_dir / self.category
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -51,7 +52,10 @@ class BaseGenerator(ABC):
         self.region = region
         self.max_tokens = max_tokens
         self.temperature = temperature
-        self.client = boto3.client("bedrock-runtime", region_name=region)
+        self.api_key = api_key or os.environ.get("AWS_BEDROCK_API_KEY", "")
+        if not self.api_key:
+            raise ValueError("Bedrock API key required: pass api_key or set AWS_BEDROCK_API_KEY")
+        self.base_url = f"https://bedrock-runtime.{region}.amazonaws.com"
         self._count = self._load_existing_count()
 
     def _load_existing_count(self) -> int:
@@ -66,29 +70,38 @@ class BaseGenerator(ABC):
         return count
 
     def _call_bedrock(self, system_prompt: str, user_prompt: str) -> str:
-        """Call Claude via Bedrock with retry logic."""
+        """Call Claude via Bedrock API key auth with retry logic."""
+        url = f"{self.base_url}/model/{self.model_id}/invoke"
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.api_key}",
+        }
+        payload = json.dumps(
+            {
+                "anthropic_version": "bedrock-2023-05-31",
+                "max_tokens": self.max_tokens,
+                "temperature": self.temperature,
+                "system": system_prompt,
+                "messages": [{"role": "user", "content": user_prompt}],
+            },
+            ensure_ascii=False,
+        )
+
         for attempt in range(MAX_RETRIES):
             try:
-                response = self.client.invoke_model(
-                    modelId=self.model_id,
-                    body=json.dumps(
-                        {
-                            "anthropic_version": "bedrock-2023-05-31",
-                            "max_tokens": self.max_tokens,
-                            "temperature": self.temperature,
-                            "system": system_prompt,
-                            "messages": [{"role": "user", "content": user_prompt}],
-                        },
-                        ensure_ascii=False,
-                    ),
-                )
-                result = json.loads(response["body"].read())
-                return result["content"][0]["text"]
-            except ClientError as e:
-                error_code = e.response["Error"]["Code"]
-                if error_code in ("ThrottlingException", "TooManyRequestsException"):
+                response = httpx.post(url, content=payload, headers=headers, timeout=120)
+                if response.status_code == 429:
                     delay = BASE_DELAY * (2**attempt)
                     console.print(f"[yellow]Rate limited, retrying in {delay:.0f}s...[/yellow]")
+                    time.sleep(delay)
+                    continue
+                response.raise_for_status()
+                result = response.json()
+                return result["content"][0]["text"]
+            except httpx.HTTPStatusError as e:
+                if attempt < MAX_RETRIES - 1:
+                    delay = BASE_DELAY * (2**attempt)
+                    console.print(f"[yellow]HTTP {e.response.status_code}, retrying in {delay:.0f}s...[/yellow]")
                     time.sleep(delay)
                     continue
                 raise
