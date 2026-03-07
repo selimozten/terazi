@@ -31,6 +31,8 @@ def f1_score(predicted: str, expected: str) -> float:
 
 def bleu(predicted: str, expected: str) -> float:
     """Sentence-level BLEU score using sacrebleu."""
+    if not predicted.strip() or not expected.strip():
+        return 1.0 if predicted.strip() == expected.strip() else 0.0
     import sacrebleu
 
     result = sacrebleu.sentence_bleu(predicted, [expected])
@@ -39,6 +41,8 @@ def bleu(predicted: str, expected: str) -> float:
 
 def rouge_l(predicted: str, expected: str) -> float:
     """ROUGE-L F1 score."""
+    if not predicted.strip() or not expected.strip():
+        return 1.0 if predicted.strip() == expected.strip() else 0.0
     from rouge_score import rouge_scorer
 
     scorer = rouge_scorer.RougeScorer(["rougeL"], use_stemmer=False)
