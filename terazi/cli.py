@@ -169,3 +169,41 @@ def validate(data_dir: str, category: str) -> None:
         console.print("[green]All data valid.[/green]")
     else:
         console.print(f"[red]{total_issues} issue(s) found.[/red]")
+
+
+@cli.command()
+@click.option("--data-dir", "-d", type=click.Path(), default="data")
+def stats(data_dir: str) -> None:
+    """Show statistics about generated benchmark data."""
+    from collections import Counter
+
+    from rich.table import Table
+
+    from terazi.eval.formats import load_jsonl
+
+    data_path = Path(data_dir)
+    grand_total = 0
+
+    for cat in ["core", "tool", "fin", "legal"]:
+        data_file = data_path / cat / f"{cat}.jsonl"
+        if not data_file.exists():
+            console.print(f"[dim]terazi-{cat}: no data[/dim]")
+            continue
+
+        examples = load_jsonl(data_file)
+        grand_total += len(examples)
+
+        subcat_counts = Counter(ex.get("subcategory", "unknown") for ex in examples)
+        diff_counts = Counter(ex.get("difficulty", "unknown") for ex in examples)
+
+        table = Table(title=f"terazi-{cat} ({len(examples)} examples)")
+        table.add_column("Subcategory")
+        table.add_column("Count", justify="right")
+        for sub, count in sorted(subcat_counts.items()):
+            table.add_row(sub, str(count))
+        console.print(table)
+
+        diff_parts = [f"{d}: {c}" for d, c in sorted(diff_counts.items())]
+        console.print(f"  Difficulty: {', '.join(diff_parts)}\n")
+
+    console.print(f"[bold]Total: {grand_total} examples[/bold]")
