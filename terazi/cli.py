@@ -221,3 +221,32 @@ def stats(data_dir: str) -> None:
         console.print(f"  Difficulty: {', '.join(diff_parts)}\n")
 
     console.print(f"[bold]Total: {grand_total} examples[/bold]")
+
+
+@cli.command()
+@click.option("--data-dir", "-d", type=click.Path(), default="data")
+@click.option("--category", "-c", type=click.Choice(["core", "tool", "fin", "legal"]), required=True)
+@click.option("--format", "fmt", type=click.Choice(["lm-eval", "hf"]), required=True)
+@click.option("--output", "-o", type=click.Path(), required=True)
+def convert(data_dir: str, category: str, fmt: str, output: str) -> None:
+    """Convert benchmark data to other formats."""
+    from terazi.eval.formats import load_jsonl, save_jsonl, to_hf_dataset, to_lm_eval_format
+
+    data_file = Path(data_dir) / category / f"{category}.jsonl"
+    if not data_file.exists():
+        console.print(f"[red]No data file: {data_file}[/red]")
+        return
+
+    examples = load_jsonl(data_file)
+    output_path = Path(output)
+
+    if fmt == "lm-eval":
+        converted = to_lm_eval_format(examples, category)
+        save_jsonl(converted, output_path)
+    elif fmt == "hf":
+        columns = to_hf_dataset(examples)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(output_path, "w") as f:
+            json.dump(columns, f, ensure_ascii=False, indent=2)
+
+    console.print(f"[green]Converted {len(examples)} examples to {fmt} format: {output_path}[/green]")
