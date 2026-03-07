@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import re
 from collections import Counter
-from typing import Callable
+from typing import Any, Callable
 
 
 def exact_match(predicted: str, expected: str) -> float:
@@ -116,7 +116,7 @@ def _normalize(text: str) -> str:
     return text
 
 
-def _parse_tool_call(text: str) -> dict:
+def _parse_tool_call(text: str) -> dict[str, Any]:
     text = text.strip()
     if not text.startswith("{"):
         # Try to find JSON in text
