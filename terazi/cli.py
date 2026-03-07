@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib
 import json
 from pathlib import Path
 
@@ -37,7 +38,6 @@ def generate(category: str, num_examples: int, batch_size: int, output_dir: str,
 
     for cat in categories:
         module_path, class_name = GENERATORS[cat].rsplit(":", 1)
-        import importlib
         module = importlib.import_module(module_path)
         generator_cls = getattr(module, class_name)
         generator = generator_cls(output_dir=output_path, region=region)
