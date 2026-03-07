@@ -65,6 +65,7 @@ def generate(
 @click.option("--data-dir", type=click.Path(), default="data")
 @click.option("--results-dir", type=click.Path(), default="results")
 @click.option("--difficulty", type=click.Choice(["easy", "medium", "hard"]), default=None, help="Filter by difficulty")
+@click.option("--sample", type=int, default=None, help="Run on a random subset of N examples")
 def evaluate(
     model: str,
     categories: str,
@@ -74,6 +75,7 @@ def evaluate(
     data_dir: str,
     results_dir: str,
     difficulty: str | None,
+    sample: int | None,
 ) -> None:
     """Run a model against terazi benchmarks."""
     from terazi.eval.runner import APIBackend, EvalRunner, HFBackend, print_results
@@ -86,7 +88,7 @@ def evaluate(
         model_backend = APIBackend(model, base_url=base_url or "https://api.openai.com/v1", api_key=api_key)
 
     runner = EvalRunner(data_dir=Path(data_dir), results_dir=Path(results_dir))
-    results = runner.run(model_backend, model, cat_list, difficulty=difficulty)
+    results = runner.run(model_backend, model, cat_list, difficulty=difficulty, sample=sample)
     print_results(results)
 
 
