@@ -19,8 +19,10 @@ env/
 htmlcov/
 .coverage
 *.log
-data/
-results/
+data/*
+!data/.gitkeep
+results/*
+!results/.gitkeep
 *.jsonl
 !configs/*.yaml
 .DS_Store
