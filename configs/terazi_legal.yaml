@@ -1,0 +1,12 @@
+task: terazi_legal
+dataset_path: selimozten/terazi
+dataset_name: legal
+output_type: generate_until
+doc_to_text: "{{input}}"
+doc_to_target: "{{expected_output}}"
+metric_list:
+  - metric: exact_match
+    aggregation: mean
+    higher_is_better: true
+metadata:
+  version: 0.1.0
