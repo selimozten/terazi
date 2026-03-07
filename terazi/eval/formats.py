@@ -7,14 +7,24 @@ from pathlib import Path
 from typing import Any
 
 
-def load_jsonl(path: Path) -> list[dict[str, Any]]:
-    """Load examples from a JSONL file."""
+def load_jsonl(
+    path: Path,
+    difficulty: str | None = None,
+    subcategory: str | None = None,
+) -> list[dict[str, Any]]:
+    """Load examples from a JSONL file, optionally filtering by difficulty or subcategory."""
     examples = []
     with open(path) as f:
         for line in f:
             line = line.strip()
-            if line:
-                examples.append(json.loads(line))
+            if not line:
+                continue
+            ex = json.loads(line)
+            if difficulty and ex.get("difficulty") != difficulty:
+                continue
+            if subcategory and ex.get("subcategory") != subcategory:
+                continue
+            examples.append(ex)
     return examples
 
 
