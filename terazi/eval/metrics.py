@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import re
 from collections import Counter
+from typing import Callable
 
 
 def exact_match(predicted: str, expected: str) -> float:
@@ -73,9 +74,12 @@ def tool_call_match(predicted: str, expected: str) -> float:
     return correct / len(exp_params)
 
 
-def get_metric_fn(category: str):
-    """Return the appropriate metric function for a benchmark category."""
-    metric_map = {
+MetricFn = Callable[[str, str], float]
+
+
+def get_metric_fn(category: str) -> dict[str, MetricFn]:
+    """Return the appropriate metric functions for a benchmark category."""
+    metric_map: dict[str, dict[str, MetricFn]] = {
         "core": {
             "reading_comprehension": f1_score,
             "common_sense": exact_match,
