@@ -157,6 +157,9 @@ class BaseGenerator(ABC):
 
                 system_prompt = self._get_system_prompt(subcat)
 
+                consecutive_failures = 0
+                max_consecutive_failures = 3
+
                 while generated < target:
                     current_batch = min(batch_size, target - generated)
                     user_prompt = self._get_user_prompt(subcat, current_batch)
@@ -164,8 +167,13 @@ class BaseGenerator(ABC):
                     try:
                         response = self._call_bedrock(system_prompt, user_prompt)
                         examples_data = self._parse_json_response(response)
+                        consecutive_failures = 0
                     except (json.JSONDecodeError, RuntimeError) as e:
+                        consecutive_failures += 1
                         console.print(f"[red]Failed to parse response for {subcat}: {e}[/red]")
+                        if consecutive_failures >= max_consecutive_failures:
+                            console.print(f"[red]{max_consecutive_failures} consecutive failures, moving on[/red]")
+                            break
                         continue
 
                     for ex_data in examples_data:
