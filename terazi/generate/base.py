@@ -43,12 +43,14 @@ class BaseGenerator(ABC):
         model_id: str = DEFAULT_MODEL_ID,
         region: str = DEFAULT_REGION,
         max_tokens: int = 4096,
+        temperature: float = 1.0,
     ) -> None:
         self.output_dir = output_dir / self.category
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.model_id = model_id
         self.region = region
         self.max_tokens = max_tokens
+        self.temperature = temperature
         self.client = boto3.client("bedrock-runtime", region_name=region)
         self._count = self._load_existing_count()
 
@@ -73,6 +75,7 @@ class BaseGenerator(ABC):
                         {
                             "anthropic_version": "bedrock-2023-05-31",
                             "max_tokens": self.max_tokens,
+                            "temperature": self.temperature,
                             "system": system_prompt,
                             "messages": [{"role": "user", "content": user_prompt}],
                         },
