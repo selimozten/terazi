@@ -117,3 +117,55 @@ def results(results_dir: str, fmt: str) -> None:
         )
 
     console.print(table)
+
+
+@cli.command()
+@click.option("--data-dir", "-d", type=click.Path(), default="data")
+@click.option("--category", "-c", type=click.Choice(["core", "tool", "fin", "legal", "all"]), default="all")
+def validate(data_dir: str, category: str) -> None:
+    """Validate generated benchmark data for completeness and formatting."""
+    from rich.table import Table
+
+    from terazi.eval.formats import load_jsonl
+
+    data_path = Path(data_dir)
+    categories = ["core", "tool", "fin", "legal"] if category == "all" else [category]
+    required_fields = {"id", "category", "subcategory", "difficulty", "input", "expected_output"}
+
+    table = Table(title="data validation")
+    table.add_column("Category")
+    table.add_column("File")
+    table.add_column("Examples", justify="right")
+    table.add_column("Issues", justify="right")
+
+    total_issues = 0
+    for cat in categories:
+        data_file = data_path / cat / f"{cat}.jsonl"
+        if not data_file.exists():
+            table.add_row(cat, str(data_file), "0", "[red]file missing[/red]")
+            total_issues += 1
+            continue
+
+        examples = load_jsonl(data_file)
+        issues = 0
+        for i, ex in enumerate(examples):
+            missing = required_fields - set(ex.keys())
+            if missing:
+                console.print(f"  [red]{cat} example {i}: missing fields {missing}[/red]")
+                issues += 1
+            if not ex.get("input", "").strip():
+                console.print(f"  [red]{cat} example {i}: empty input[/red]")
+                issues += 1
+            if not ex.get("expected_output", "").strip():
+                console.print(f"  [red]{cat} example {i}: empty expected_output[/red]")
+                issues += 1
+
+        status = f"[green]{issues}[/green]" if issues == 0 else f"[red]{issues}[/red]"
+        table.add_row(cat, str(data_file), str(len(examples)), status)
+        total_issues += issues
+
+    console.print(table)
+    if total_issues == 0:
+        console.print("[green]All data valid.[/green]")
+    else:
+        console.print(f"[red]{total_issues} issue(s) found.[/red]")
