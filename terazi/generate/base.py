@@ -69,12 +69,15 @@ class BaseGenerator(ABC):
             try:
                 response = self.client.invoke_model(
                     modelId=self.model_id,
-                    body=json.dumps({
-                        "anthropic_version": "bedrock-2023-05-31",
-                        "max_tokens": self.max_tokens,
-                        "system": system_prompt,
-                        "messages": [{"role": "user", "content": user_prompt}],
-                    }),
+                    body=json.dumps(
+                        {
+                            "anthropic_version": "bedrock-2023-05-31",
+                            "max_tokens": self.max_tokens,
+                            "system": system_prompt,
+                            "messages": [{"role": "user", "content": user_prompt}],
+                        },
+                        ensure_ascii=False,
+                    ),
                 )
                 result = json.loads(response["body"].read())
                 return result["content"][0]["text"]
