@@ -103,6 +103,7 @@ class EvalRunner:
         backend: ModelBackend,
         model_name: str,
         categories: list[str] | None = None,
+        difficulty: str | None = None,
     ) -> list[EvalResult]:
         all_categories = categories or ["core", "tool", "fin", "legal"]
         results = []
@@ -113,7 +114,7 @@ class EvalRunner:
                 console.print(f"[yellow]No data for {category}, skipping[/yellow]")
                 continue
 
-            result = self._eval_category(backend, model_name, category, data_file)
+            result = self._eval_category(backend, model_name, category, data_file, difficulty)
             results.append(result)
             self._save_result(result)
 
@@ -125,8 +126,9 @@ class EvalRunner:
         model_name: str,
         category: str,
         data_file: Path,
+        difficulty: str | None = None,
     ) -> EvalResult:
-        examples = load_jsonl(data_file)
+        examples = load_jsonl(data_file, difficulty=difficulty)
         metric_fns = get_metric_fn(category)
 
         scored_examples = []
