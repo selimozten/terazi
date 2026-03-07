@@ -140,6 +140,8 @@ class BaseGenerator(ABC):
         console.print(f"  Subcategories: {', '.join(subcategories)}")
         console.print(f"  ~{per_subcategory} examples each, batch size {batch_size}")
 
+        start_time = time.monotonic()
+
         with Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
@@ -181,5 +183,7 @@ class BaseGenerator(ABC):
 
                     progress.update(task, completed=generated, description=f"{subcat}: {generated}/{target}")
 
-        console.print(f"[green]Done. Total examples: {self._count}[/green]")
+        elapsed = time.monotonic() - start_time
+        minutes, seconds = divmod(int(elapsed), 60)
+        console.print(f"[green]Done. Total examples: {self._count} ({minutes}m {seconds}s)[/green]")
         console.print(f"  Output: {self.output_dir / f'{self.category}.jsonl'}")
