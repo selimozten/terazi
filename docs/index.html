@@ -1,388 +1,335 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>terazi — Turkish LLM Leaderboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  /* ========================================
-     THEME TOKENS
-     ======================================== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
   :root {
-    --bg-base: #0c0e13;
-    --bg-raised: #12151c;
-    --bg-surface: #181c25;
-    --bg-surface-hover: #1e2230;
-    --bg-overlay: #222738;
-    --text-primary: #e8eaf0;
-    --text-secondary: #8b90a5;
-    --text-tertiary: #5c6178;
-    --border-subtle: #1f2331;
-    --border-default: #282d3e;
-    --border-strong: #353b52;
-    --accent: #d4a053;
-    --accent-dim: #b8893f;
-    --accent-glow: rgba(212, 160, 83, 0.12);
-    --accent-glow-strong: rgba(212, 160, 83, 0.22);
-    --score-bar-bg: #1a1e28;
-    --score-bar-track: rgba(255,255,255,0.04);
-    --pill-sat: 65%;
-    --pill-lit: 52%;
-    --pill-alpha: 0.18;
-    --radius-sm: 4px;
-    --radius-md: 8px;
-    --radius-lg: 12px;
-    --font-body: "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
-    --font-mono: "JetBrains Mono", "SF Mono", "Cascadia Code", monospace;
-    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --bg: #1e1e26;
+    --bg-deep: #13131a;
+    --bg-surface: #252530;
+    --bg-card: rgba(30, 30, 42, 0.7);
+    --accent: #9b6bea;
+    --accent-glow: rgba(155, 107, 234, 0.15);
+    --accent-hover: #b48aff;
+    --accent-dim: #7044b5;
+    --text: #e8e8f0;
+    --text-secondary: #9494ab;
+    --text-muted: #5e5e74;
+    --border: rgba(155, 107, 234, 0.12);
+    --border-strong: rgba(155, 107, 234, 0.25);
+    --green: #50c878;
+    --row-hover: rgba(155, 107, 234, 0.06);
+    --pill-sat: 60%;
+    --pill-lit: 55%;
+    --pill-alpha: 0.15;
+    --font-display: 'Chakra Petch', sans-serif;
+    --font-body: 'IBM Plex Sans', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
   }
 
-  /* Light mode */
-  @media (prefers-color-scheme: light) {
-    :root {
-      --bg-base: #f5f3ef;
-      --bg-raised: #ffffff;
-      --bg-surface: #ffffff;
-      --bg-surface-hover: #f8f6f2;
-      --bg-overlay: #f0ede7;
-      --text-primary: #1a1812;
-      --text-secondary: #6b6558;
-      --text-tertiary: #9e9788;
-      --border-subtle: #eae6de;
-      --border-default: #ddd8ce;
-      --border-strong: #c8c2b5;
-      --accent: #a67b2e;
-      --accent-dim: #8c6826;
-      --accent-glow: rgba(166, 123, 46, 0.08);
-      --accent-glow-strong: rgba(166, 123, 46, 0.15);
-      --score-bar-bg: #f0ede7;
-      --score-bar-track: rgba(0,0,0,0.03);
-      --pill-sat: 72%;
-      --pill-lit: 38%;
-      --pill-alpha: 0.12;
-    }
+  [data-theme="light"] {
+    --bg: #f4f3f0;
+    --bg-deep: #eae8e3;
+    --bg-surface: #ffffff;
+    --bg-card: rgba(255, 255, 255, 0.85);
+    --accent: #7044b5;
+    --accent-glow: rgba(112, 68, 181, 0.08);
+    --accent-hover: #5a33a0;
+    --accent-dim: #8b5fd4;
+    --text: #1a1a24;
+    --text-secondary: #5e5c6e;
+    --text-muted: #9896a6;
+    --border: rgba(112, 68, 181, 0.12);
+    --border-strong: rgba(112, 68, 181, 0.22);
+    --green: #2a9d5c;
+    --row-hover: rgba(112, 68, 181, 0.05);
+    --pill-sat: 70%;
+    --pill-lit: 38%;
+    --pill-alpha: 0.1;
   }
 
-  /* ========================================
-     RESET & BASE
-     ======================================== */
-  *, *::before, *::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  }
-
-  html {
-    font-size: 16px;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
+  html { scroll-behavior: smooth; }
 
   body {
     font-family: var(--font-body);
-    background: var(--bg-base);
-    color: var(--text-primary);
+    background: var(--bg);
+    color: var(--text);
     line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    position: relative;
     overflow-x: hidden;
+    transition: background 0.3s, color 0.3s;
   }
 
-  /* Subtle grain overlay for texture */
+  a { color: var(--accent); text-decoration: none; transition: color 0.2s; }
+  a:hover { color: var(--accent-hover); }
+
+  /* Noise */
   body::after {
-    content: "";
+    content: '';
     position: fixed;
     inset: 0;
     pointer-events: none;
     z-index: 9999;
     opacity: 0.025;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-    background-size: 128px 128px;
+    background-size: 200px;
   }
 
-  .container {
-    max-width: 1140px;
-    margin: 0 auto;
-    padding: 0 28px;
-    width: 100%;
+  [data-theme="light"] body::after { opacity: 0.015; }
+
+  /* Reveal */
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .reveal-d1 { transition-delay: 0.06s; }
+  .reveal-d2 { transition-delay: 0.12s; }
+  .reveal-d3 { transition-delay: 0.18s; }
+
+  /* Layout */
+  .container { max-width: 1040px; margin: 0 auto; padding: 0 28px; width: 100%; }
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, var(--border-strong) 50%, transparent 100%);
   }
 
-  /* ========================================
-     HEADER
-     ======================================== */
-  .site-header {
-    padding: 56px 0 44px;
+  /* ===== Hero ===== */
+  .hero {
     position: relative;
+    padding: 72px 0 56px;
+    overflow: hidden;
   }
-
-  .site-header::after {
-    content: "";
+  .hero-grid {
     position: absolute;
-    bottom: 0;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(155, 107, 234, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(155, 107, 234, 0.04) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, black 10%, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, black 10%, transparent 70%);
+  }
+  [data-theme="light"] .hero-grid {
+    background-image:
+      linear-gradient(rgba(112, 68, 181, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(112, 68, 181, 0.06) 1px, transparent 1px);
+  }
+  .hero-glow {
+    position: absolute;
+    width: 500px;
+    height: 300px;
+    top: -60px;
     left: 50%;
     transform: translateX(-50%);
-    width: min(100%, 1140px);
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--border-default) 20%, var(--accent-dim) 50%, var(--border-default) 80%, transparent);
+    background: radial-gradient(ellipse, rgba(155, 107, 234, 0.1) 0%, transparent 70%);
+    pointer-events: none;
   }
-
-  .header-content {
+  [data-theme="light"] .hero-glow {
+    background: radial-gradient(ellipse, rgba(112, 68, 181, 0.06) 0%, transparent 70%);
+  }
+  .hero .container { position: relative; z-index: 1; }
+  .hero-top {
     display: flex;
-    align-items: flex-end;
+    align-items: flex-start;
     justify-content: space-between;
-    gap: 24px;
+    gap: 20px;
     flex-wrap: wrap;
   }
-
-  .header-left {
-    max-width: 640px;
-  }
-
-  .brand-mark {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-bottom: 14px;
-  }
-
-  .brand-icon {
-    width: 36px;
-    height: 36px;
-    position: relative;
-  }
-
-  .brand-icon svg {
-    width: 100%;
-    height: 100%;
-  }
-
-  .brand-title {
-    font-size: 1.75rem;
+  .hero h1 {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 4vw, 2.8rem);
     font-weight: 700;
-    letter-spacing: -0.04em;
+    letter-spacing: -0.03em;
     line-height: 1.1;
-    color: var(--text-primary);
+    margin-bottom: 12px;
   }
-
-  .brand-title .t {
-    color: var(--accent);
+  .hero h1 .gradient {
+    background: linear-gradient(135deg, var(--accent) 0%, #d4b8ff 50%, var(--accent) 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 6s ease-in-out infinite;
   }
-
-  .brand-subtitle {
+  @keyframes shimmer {
+    0%, 100% { background-position: 0% center; }
+    50% { background-position: 200% center; }
+  }
+  .hero-desc {
     font-size: 0.95rem;
     color: var(--text-secondary);
+    max-width: 520px;
     line-height: 1.55;
-    font-weight: 400;
   }
-
-  .header-stats {
+  .hero-stats {
     display: flex;
-    gap: 28px;
+    gap: 24px;
     flex-shrink: 0;
+    margin-top: 4px;
   }
-
-  .stat-block {
-    text-align: right;
-  }
-
+  .stat-block { text-align: center; }
   .stat-value {
     font-family: var(--font-mono);
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--text-primary);
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--text);
     line-height: 1.2;
   }
-
   .stat-label {
-    font-size: 0.72rem;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-tertiary);
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
     font-weight: 500;
   }
 
-  /* ========================================
-     MAIN
-     ======================================== */
-  main {
-    flex: 1;
-    padding: 36px 0 64px;
+  /* Theme toggle */
+  .theme-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 100;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    border: 1px solid var(--border-strong);
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.2s, background 0.2s, transform 0.2s;
   }
+  .theme-toggle:hover {
+    border-color: var(--accent);
+    background: var(--accent-glow);
+    transform: scale(1.05);
+  }
+  .theme-toggle svg {
+    width: 18px;
+    height: 18px;
+    color: var(--text-secondary);
+    transition: color 0.2s;
+  }
+  .theme-toggle:hover svg { color: var(--accent); }
+  .icon-sun, .icon-moon { display: none; }
+  [data-theme="dark"] .icon-sun { display: block; }
+  [data-theme="light"] .icon-moon { display: block; }
 
-  .loading-state, .error-state {
+  /* ===== Table ===== */
+  main { flex: 1; padding: 32px 0 56px; }
+
+  .loading-state {
     text-align: center;
-    padding: 100px 24px;
-    color: var(--text-tertiary);
-    font-size: 0.95rem;
-    font-weight: 400;
+    padding: 80px 24px;
+    color: var(--text-muted);
+    font-size: 0.9rem;
   }
-
   .loading-state::before {
-    content: "";
+    content: '';
     display: block;
-    width: 24px;
-    height: 24px;
-    border: 2px solid var(--border-default);
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
     border-top-color: var(--accent);
     border-radius: 50%;
-    margin: 0 auto 16px;
-    animation: spin 0.8s linear infinite;
+    margin: 0 auto 14px;
+    animation: spin 0.7s linear infinite;
   }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error-state { text-align: center; padding: 80px 24px; color: #c45; }
 
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-
-  .error-state {
-    color: #c45;
-  }
-
-  /* ========================================
-     TABLE WRAPPER
-     ======================================== */
   .table-wrap {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-lg);
-    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
   }
 
   table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 760px;
+    min-width: 700px;
     table-layout: fixed;
   }
 
-  col.col-rank   { width: 56px; }
-  col.col-model  { width: auto; }
-  col.col-avg    { width: 130px; }
-  col.col-score  { width: 110px; }
+  col.col-rank  { width: 48px; }
+  col.col-model { width: auto; }
+  col.col-avg   { width: 120px; }
+  col.col-score { width: 100px; }
 
-  /* ========================================
-     TABLE HEADER
-     ======================================== */
   thead th {
     background: var(--bg-surface);
-    font-family: var(--font-body);
-    font-weight: 600;
-    font-size: 0.7rem;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 0.68rem;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--text-tertiary);
-    padding: 16px 18px;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    padding: 14px 16px;
     text-align: left;
-    border-bottom: 1px solid var(--border-default);
+    border-bottom: 1px solid var(--border);
     cursor: pointer;
     user-select: none;
     white-space: nowrap;
-    transition: color 0.2s var(--ease-out), background 0.2s var(--ease-out);
-    position: relative;
+    transition: color 0.2s, background 0.2s;
   }
-
-  thead th:hover {
-    color: var(--text-secondary);
-    background: var(--bg-surface-hover);
-  }
-
-  thead th.sort-active {
-    color: var(--accent);
-  }
-
-  thead th .sort-arrow {
+  thead th:hover { color: var(--text-secondary); }
+  thead th.sort-active { color: var(--accent); }
+  thead th .arrow {
     display: inline-block;
-    margin-left: 5px;
+    margin-left: 4px;
     font-size: 0.6rem;
     opacity: 0;
-    transition: opacity 0.2s, transform 0.2s var(--ease-spring);
-    vertical-align: middle;
+    transition: opacity 0.15s;
   }
+  thead th.sort-active .arrow { opacity: 1; }
+  thead th:not(.th-model) { text-align: center; }
+  thead th:first-child { text-align: center; cursor: default; }
+  thead th:first-child:hover { color: var(--text-muted); }
 
-  thead th.sort-active .sort-arrow {
-    opacity: 1;
-  }
-
-  thead th:not(.col-model-th) {
-    text-align: center;
-  }
-
-  thead th:first-child {
-    text-align: center;
-    cursor: default;
-  }
-
-  thead th:first-child:hover {
-    background: var(--bg-surface);
-    color: var(--text-tertiary);
-  }
-
-  /* ========================================
-     TABLE BODY
-     ======================================== */
   tbody tr.model-row {
     cursor: pointer;
-    transition: background 0.15s var(--ease-out);
+    transition: background 0.15s;
   }
-
-  tbody tr.model-row:hover {
-    background: var(--bg-surface-hover);
-  }
-
-  tbody tr.model-row td {
-    border-bottom: 1px solid var(--border-subtle);
-  }
+  tbody tr.model-row:hover { background: var(--row-hover); }
+  tbody tr.model-row td { border-bottom: 1px solid var(--border); }
 
   tbody td {
-    padding: 14px 18px;
-    font-size: 0.9rem;
+    padding: 12px 16px;
+    font-size: 0.88rem;
     vertical-align: middle;
+    transition: background 0.2s;
   }
 
-  /* Rank */
   .rank-cell {
     text-align: center;
     font-family: var(--font-mono);
     font-weight: 600;
-    font-size: 0.82rem;
-    color: var(--text-tertiary);
-    font-variant-numeric: tabular-nums;
+    font-size: 0.8rem;
+    color: var(--text-muted);
   }
+  .rank-1 .rank-num { color: #e6c44d; }
+  .rank-2 .rank-num { color: #a0a4b4; }
+  .rank-3 .rank-num { color: #c88a5a; }
 
-  .rank-1 .rank-num {
-    background: linear-gradient(135deg, #d4a053, #f0c97a);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    font-weight: 700;
-    font-size: 0.92rem;
-  }
-
-  .rank-2 .rank-num {
-    background: linear-gradient(135deg, #8a90a5, #b5bad0);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    font-weight: 700;
-    font-size: 0.92rem;
-  }
-
-  .rank-3 .rank-num {
-    background: linear-gradient(135deg, #b07340, #d4996a);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    font-weight: 700;
-    font-size: 0.92rem;
-  }
-
-  /* Model name */
   .model-cell {
     font-weight: 500;
     white-space: nowrap;
@@ -390,338 +337,175 @@
     text-overflow: ellipsis;
     max-width: 0;
   }
-
   .model-name-wrap {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
   }
+  .model-provider { color: var(--text-muted); font-weight: 400; }
+  .model-id { color: var(--text); font-weight: 500; }
 
-  .model-provider {
-    color: var(--text-tertiary);
-    font-weight: 400;
-  }
-
-  .model-id {
-    color: var(--text-primary);
-    font-weight: 500;
-  }
-
-  /* Chevron */
   .chevron {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     flex-shrink: 0;
-    transition: transform 0.25s var(--ease-spring);
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
-
   .chevron svg {
-    width: 14px;
-    height: 14px;
+    width: 12px;
+    height: 12px;
     fill: none;
-    stroke: var(--text-tertiary);
+    stroke: var(--text-muted);
     stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
     transition: stroke 0.2s;
   }
+  tr.model-row:hover .chevron svg { stroke: var(--text-secondary); }
+  tr.model-row.expanded .chevron { transform: rotate(90deg); }
+  tr.model-row.expanded .chevron svg { stroke: var(--accent); }
 
-  tr.model-row:hover .chevron svg {
-    stroke: var(--text-secondary);
-  }
-
-  tr.model-row.expanded .chevron {
-    transform: rotate(90deg);
-  }
-
-  tr.model-row.expanded .chevron svg {
-    stroke: var(--accent);
-  }
-
-  /* Score cells */
   .score-cell {
     text-align: center;
     font-family: var(--font-mono);
-    font-size: 0.82rem;
+    font-size: 0.8rem;
   }
 
-  /* ========================================
-     SCORE PILL
-     ======================================== */
+  /* Pills */
   .pill {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 4px 0;
-    border-radius: var(--radius-sm);
+    padding: 3px 0;
+    border-radius: 4px;
     font-family: var(--font-mono);
     font-weight: 600;
-    font-size: 0.78rem;
-    min-width: 56px;
+    font-size: 0.76rem;
+    min-width: 52px;
     text-align: center;
-    letter-spacing: 0.01em;
     line-height: 1;
-    position: relative;
-    transition: transform 0.15s var(--ease-spring);
+    transition: transform 0.15s;
   }
+  tr.model-row:hover .pill { transform: scale(1.03); }
+  .pill-na { color: var(--text-muted); font-weight: 400; background: none; }
+  .avg-cell .pill { font-size: 0.82rem; font-weight: 700; min-width: 60px; }
 
-  tr.model-row:hover .pill {
-    transform: scale(1.04);
-  }
-
-  .pill-na {
-    color: var(--text-tertiary);
-    font-weight: 400;
-    font-size: 0.75rem;
-    background: none;
-  }
-
-  /* Average column: special emphasis */
-  .avg-cell .pill {
-    font-size: 0.84rem;
-    font-weight: 700;
-    padding: 5px 0;
-    min-width: 64px;
-  }
-
-  /* ========================================
-     SCORE BAR (inside average cell)
-     ======================================== */
+  /* Score bar */
   .score-bar-wrap {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
   }
-
   .score-bar {
-    width: 72px;
-    height: 3px;
-    background: var(--score-bar-track);
-    border-radius: 2px;
+    width: 64px;
+    height: 2px;
+    background: var(--border);
+    border-radius: 1px;
     overflow: hidden;
   }
-
   .score-bar-fill {
     height: 100%;
-    border-radius: 2px;
-    transition: width 0.6s var(--ease-out);
+    border-radius: 1px;
   }
 
-  /* ========================================
-     DETAIL / EXPAND ROW
-     ======================================== */
-  tr.detail-row {
-    display: none;
-  }
-
-  tr.detail-row.open {
-    display: table-row;
-  }
-
+  /* Detail row */
+  tr.detail-row { display: none; }
+  tr.detail-row.open { display: table-row; }
   tr.detail-row td {
     padding: 0;
-    border-bottom: 1px solid var(--border-default);
+    border-bottom: 1px solid var(--border);
   }
-
   .detail-inner {
-    padding: 24px 28px 28px;
-    background: var(--bg-base);
-    border-top: 1px solid var(--border-subtle);
+    padding: 20px 24px 24px;
+    background: var(--bg-deep);
+    transition: background 0.3s;
   }
-
   .detail-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 12px;
   }
-
   .detail-card {
-    background: var(--bg-surface);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-card);
     overflow: hidden;
     transition: border-color 0.2s;
   }
-
-  .detail-card:hover {
-    border-color: var(--border-strong);
-  }
-
+  .detail-card:hover { border-color: var(--border-strong); }
   .detail-card-header {
-    padding: 10px 14px;
+    padding: 8px 12px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid var(--border-subtle);
-    background: var(--bg-overlay);
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-surface);
   }
-
   .detail-card-title {
+    font-family: var(--font-display);
     font-weight: 600;
     font-size: 0.72rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--text-secondary);
   }
-
-  .detail-card-score {
-    font-family: var(--font-mono);
-    font-size: 0.78rem;
-    font-weight: 600;
-  }
-
-  .detail-sub-list {
-    padding: 4px 0;
-  }
-
+  .detail-sub-list { padding: 2px 0; }
   .detail-sub-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 7px 14px;
-    font-size: 0.82rem;
-    transition: background 0.12s;
+    padding: 6px 12px;
+    font-size: 0.8rem;
   }
-
-  .detail-sub-row:hover {
-    background: var(--bg-surface-hover);
-  }
-
-  .detail-sub-row:not(:last-child) {
-    border-bottom: 1px solid var(--border-subtle);
-  }
-
+  .detail-sub-row:not(:last-child) { border-bottom: 1px solid var(--border); }
+  .detail-sub-row:hover { background: var(--row-hover); }
   .detail-sub-name {
     color: var(--text-secondary);
+    font-size: 0.78rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    margin-right: 14px;
-    font-weight: 400;
+    margin-right: 12px;
   }
-
-  .detail-sub-score {
-    flex-shrink: 0;
-  }
-
-  .detail-sub-bar-wrap {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
+  .detail-sub-score { flex-shrink: 0; display: flex; align-items: center; gap: 8px; }
   .detail-sub-bar {
-    width: 48px;
-    height: 3px;
-    background: var(--score-bar-track);
-    border-radius: 2px;
+    width: 40px;
+    height: 2px;
+    background: var(--border);
+    border-radius: 1px;
     overflow: hidden;
-    flex-shrink: 0;
   }
-
-  .detail-sub-bar-fill {
-    height: 100%;
-    border-radius: 2px;
-  }
-
+  .detail-sub-bar-fill { height: 100%; border-radius: 1px; }
   .detail-sub-val {
     font-family: var(--font-mono);
     font-weight: 500;
-    font-size: 0.78rem;
-    min-width: 40px;
+    font-size: 0.74rem;
+    min-width: 36px;
     text-align: right;
   }
 
-  /* ========================================
-     STICKY COLUMNS (MOBILE)
-     ======================================== */
+  /* Sticky mobile */
   @media (max-width: 800px) {
-    .header-stats {
-      display: none;
+    .hero-stats { display: none; }
+    .container { padding: 0 16px; }
+    thead th:nth-child(1), tbody td:nth-child(1) {
+      position: sticky; left: 0; z-index: 5; background: var(--bg-surface);
     }
-
-    .container {
-      padding: 0 16px;
+    thead th:nth-child(2), tbody td:nth-child(2) {
+      position: sticky; left: 48px; z-index: 5; background: var(--bg-surface);
+      border-right: 1px solid var(--border);
     }
-
-    thead th:nth-child(1),
-    tbody td:nth-child(1) {
-      position: sticky;
-      left: 0;
-      z-index: 5;
-      background: var(--bg-surface);
-    }
-
-    thead th:nth-child(2),
-    tbody td:nth-child(2) {
-      position: sticky;
-      left: 56px;
-      z-index: 5;
-      background: var(--bg-surface);
-      border-right: 1px solid var(--border-default);
-    }
-
+    thead th:nth-child(1), thead th:nth-child(2) { z-index: 11; }
     tbody tr.model-row:hover td:nth-child(1),
-    tbody tr.model-row:hover td:nth-child(2) {
-      background: var(--bg-surface-hover);
-    }
-
-    thead th:nth-child(1),
-    thead th:nth-child(2) {
-      z-index: 11;
-    }
+    tbody tr.model-row:hover td:nth-child(2) { background: var(--bg-surface); }
   }
 
-  /* ========================================
-     ENTRANCE ANIMATIONS
-     ======================================== */
-  @keyframes fadeSlideUp {
-    from {
-      opacity: 0;
-      transform: translateY(12px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .animate-in {
-    animation: fadeSlideUp 0.5s var(--ease-out) both;
-  }
-
-  .stagger-1 { animation-delay: 0.05s; }
-  .stagger-2 { animation-delay: 0.1s; }
-  .stagger-3 { animation-delay: 0.15s; }
-  .stagger-4 { animation-delay: 0.2s; }
-  .stagger-5 { animation-delay: 0.25s; }
-  .stagger-6 { animation-delay: 0.3s; }
-  .stagger-7 { animation-delay: 0.35s; }
-  .stagger-8 { animation-delay: 0.4s; }
-
-  /* ========================================
-     FOOTER
-     ======================================== */
-  .site-footer {
-    padding: 28px 0;
-    position: relative;
-  }
-
-  .site-footer::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: min(100%, 1140px);
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--border-default) 30%, var(--border-default) 70%, transparent);
-  }
-
+  /* Footer */
+  .site-footer { padding: 28px 0; }
   .footer-inner {
     display: flex;
     justify-content: space-between;
@@ -729,76 +513,62 @@
     flex-wrap: wrap;
     gap: 12px;
   }
-
-  .footer-timestamp {
-    color: var(--text-tertiary);
-    font-size: 0.78rem;
-    font-weight: 400;
+  .footer-ts {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-muted);
   }
-
   .footer-link {
-    color: var(--text-tertiary);
-    text-decoration: none;
-    font-size: 0.78rem;
-    font-weight: 500;
     display: flex;
     align-items: center;
     gap: 6px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
     transition: color 0.2s;
   }
-
-  .footer-link:hover {
-    color: var(--accent);
-  }
-
-  .footer-link svg {
-    width: 16px;
-    height: 16px;
-    fill: currentColor;
-  }
+  .footer-link:hover { color: var(--accent); }
+  .footer-link svg { width: 15px; height: 15px; fill: currentColor; }
 </style>
 </head>
 <body>
 
-<header class="site-header">
+<button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+  <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+  <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+</button>
+
+<header class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow"></div>
   <div class="container">
-    <div class="header-content">
-      <div class="header-left">
-        <div class="brand-mark">
-          <div class="brand-icon">
-            <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M18 4L18 28" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
-              <path d="M18 4L6 10" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
-              <path d="M18 4L30 10" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
-              <path d="M3 12C3 12 6 18 6 18H12L9 12" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M33 12C33 12 30 18 30 18H24L27 12" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              <rect x="12" y="28" width="12" height="3" rx="1.5" fill="var(--accent)" opacity="0.5"/>
-              <circle cx="18" cy="4" r="2" fill="var(--accent)"/>
-            </svg>
-          </div>
-          <h1 class="brand-title"><span class="t">terazi</span></h1>
-        </div>
-        <p class="brand-subtitle">Independent benchmark for evaluating large language models on Turkish-language tasks across core reasoning, tool use, finance, and legal domains.</p>
+    <div class="hero-top reveal">
+      <div>
+        <h1><span class="gradient">terazi</span></h1>
+        <p class="hero-desc">Independent benchmark for evaluating large language models on Turkish-language tasks across core reasoning, tool use, finance, and legal domains.</p>
       </div>
-      <div class="header-stats" id="header-stats"></div>
+      <div class="hero-stats" id="hero-stats"></div>
     </div>
   </div>
 </header>
 
+<div class="divider"></div>
+
 <main>
   <div class="container">
     <div id="app">
-      <div class="loading-state" id="loading">Loading leaderboard data</div>
+      <div class="loading-state">Loading leaderboard data</div>
     </div>
   </div>
 </main>
 
+<div class="divider"></div>
+
 <footer class="site-footer">
   <div class="container">
     <div class="footer-inner">
-      <span class="footer-timestamp" id="last-updated"></span>
+      <span class="footer-ts" id="last-updated"></span>
       <a class="footer-link" href="https://github.com/selimozten/terazi" target="_blank" rel="noopener noreferrer">
-        <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
         selimozten/terazi
       </a>
     </div>
@@ -809,318 +579,182 @@
 (function () {
   "use strict";
 
-  var CATEGORY_LABELS = { core: "Core", tool: "Tool", fin: "Fin", legal: "Legal" };
+  /* ---- Theme ---- */
+  var html = document.documentElement;
+  var stored = localStorage.getItem("terazi-theme");
+  if (stored) { html.setAttribute("data-theme", stored); }
+  else if (window.matchMedia("(prefers-color-scheme: light)").matches) { html.setAttribute("data-theme", "light"); }
+
+  document.getElementById("theme-toggle").addEventListener("click", function () {
+    var next = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    html.setAttribute("data-theme", next);
+    localStorage.setItem("terazi-theme", next);
+  });
+
+  /* ---- Reveal ---- */
+  var obs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add("visible"); obs.unobserve(e.target); } });
+  }, { threshold: 0.1, rootMargin: "0px 0px -30px 0px" });
+  document.querySelectorAll(".reveal").forEach(function (el) { obs.observe(el); });
+
+  /* ---- Data ---- */
+  var CATS = { core: "Core", tool: "Tool", fin: "Fin", legal: "Legal" };
   var data = null;
   var sortKey = "average";
   var sortAsc = false;
   var expandedRows = new Set();
 
-  /* ---- Helpers ---- */
-
-  function scoreColor(score) {
-    if (score === null || score === undefined) return null;
-    var h = score * 120;
-    var s = getComputedStyle(document.documentElement).getPropertyValue("--pill-sat").trim() || "65%";
-    var l = getComputedStyle(document.documentElement).getPropertyValue("--pill-lit").trim() || "52%";
-    return "hsl(" + h + "," + s + "," + l + ")";
+  function scoreColor(s) {
+    if (s == null) return null;
+    var h = s * 120;
+    var sat = getComputedStyle(html).getPropertyValue("--pill-sat").trim() || "60%";
+    var lit = getComputedStyle(html).getPropertyValue("--pill-lit").trim() || "55%";
+    return "hsl(" + h + "," + sat + "," + lit + ")";
   }
 
-  function scoreColorAlpha(score) {
-    if (score === null || score === undefined) return "transparent";
-    var h = score * 120;
-    var s = getComputedStyle(document.documentElement).getPropertyValue("--pill-sat").trim() || "65%";
-    var a = getComputedStyle(document.documentElement).getPropertyValue("--pill-alpha").trim() || "0.18";
-    return "hsla(" + h + "," + s + ",50%," + a + ")";
+  function scoreAlpha(s) {
+    if (s == null) return "transparent";
+    var h = s * 120;
+    var sat = getComputedStyle(html).getPropertyValue("--pill-sat").trim() || "60%";
+    var a = getComputedStyle(html).getPropertyValue("--pill-alpha").trim() || "0.15";
+    return "hsla(" + h + "," + sat + ",50%," + a + ")";
   }
 
-  function fmt(v) {
-    if (v === null || v === undefined) return null;
-    return v.toFixed(3);
+  function fmt(v) { return v == null ? null : v.toFixed(3); }
+  function pct(v) { return v == null ? "0%" : (v * 100) + "%"; }
+
+  function pill(s) {
+    if (s == null) return '<span class="pill pill-na">--</span>';
+    return '<span class="pill" style="color:' + scoreColor(s) + ';background:' + scoreAlpha(s) + '">' + fmt(s) + '</span>';
   }
 
-  function pct(v) {
-    if (v === null || v === undefined) return "0%";
-    return (v * 100).toFixed(0) + "%";
+  function bar(s, w) {
+    var c = scoreColor(s);
+    var p = s != null ? (s * 100) + "%" : "0%";
+    return '<div class="score-bar" style="width:' + (w||64) + 'px"><div class="score-bar-fill" style="width:' + p + ';background:' + c + '"></div></div>';
   }
 
-  function makePill(score, large) {
-    if (score === null || score === undefined) {
-      return '<span class="pill pill-na">--</span>';
-    }
-    var c = scoreColor(score);
-    var bg = scoreColorAlpha(score);
-    return '<span class="pill" style="color:' + c + ';background:' + bg + '">' + fmt(score) + '</span>';
-  }
+  function prettySub(n) { return n.replace(/_/g, " ").replace(/\b\w/g, function(c){return c.toUpperCase();}); }
+  function chev() { return '<span class="chevron"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>'; }
+  function splitName(n) { var i = n.indexOf("/"); return i < 0 ? { p: "", id: n } : { p: n.substring(0,i+1), id: n.substring(i+1) }; }
+  function esc(s) { var d = document.createElement("div"); d.appendChild(document.createTextNode(s)); return d.innerHTML; }
 
-  function makeBar(score, width) {
-    var w = width || 72;
-    var c = scoreColor(score);
-    var p = score !== null && score !== undefined ? (score * 100) + "%" : "0%";
-    return '<div class="score-bar" style="width:' + w + 'px"><div class="score-bar-fill" style="width:' + p + ';background:' + c + '"></div></div>';
-  }
-
-  function prettySub(name) {
-    return name.replace(/_/g, " ").replace(/\b\w/g, function (c) { return c.toUpperCase(); });
-  }
-
-  function chevronSvg() {
-    return '<span class="chevron"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>';
-  }
-
-  function splitModelName(name) {
-    var idx = name.indexOf("/");
-    if (idx === -1) return { provider: "", id: name };
-    return { provider: name.substring(0, idx + 1), id: name.substring(idx + 1) };
-  }
-
-  function escHtml(s) {
-    var d = document.createElement("div");
-    d.appendChild(document.createTextNode(s));
-    return d.innerHTML;
-  }
-
-  /* ---- Sort ---- */
-
-  function getScore(model, key) {
-    if (key === "average") return model.average != null ? model.average : -Infinity;
-    if (model.results && model.results[key] && model.results[key].overall != null) {
-      return model.results[key].overall;
-    }
-    return -Infinity;
+  function getScore(m, k) {
+    if (k === "average") return m.average != null ? m.average : -Infinity;
+    return m.results && m.results[k] && m.results[k].overall != null ? m.results[k].overall : -Infinity;
   }
 
   function doSort(models) {
     var sorted = models.slice();
     if (sortKey === "name") {
-      sorted.sort(function (a, b) {
-        var va = a.name.toLowerCase();
-        var vb = b.name.toLowerCase();
-        if (va < vb) return sortAsc ? -1 : 1;
-        if (va > vb) return sortAsc ? 1 : -1;
-        return 0;
-      });
+      sorted.sort(function(a,b) { var x=a.name.toLowerCase(),y=b.name.toLowerCase(); return x<y?(sortAsc?-1:1):x>y?(sortAsc?1:-1):0; });
     } else {
-      sorted.sort(function (a, b) {
-        var va = getScore(a, sortKey);
-        var vb = getScore(b, sortKey);
-        if (va === vb) return 0;
-        return sortAsc ? va - vb : vb - va;
-      });
+      sorted.sort(function(a,b) { var x=getScore(a,sortKey),y=getScore(b,sortKey); return x===y?0:sortAsc?x-y:y-x; });
     }
     return sorted;
   }
 
-  /* ---- Header stats ---- */
-
-  function renderHeaderStats() {
-    var el = document.getElementById("header-stats");
+  function renderStats() {
+    var el = document.getElementById("hero-stats");
     if (!data) return;
-    var totalExamples = 0;
+    var total = 0;
     if (data.models && data.models.length > 0) {
       var m = data.models[0];
-      var cats = data.categories || [];
-      for (var i = 0; i < cats.length; i++) {
-        if (m.results && m.results[cats[i]]) {
-          totalExamples += m.results[cats[i]].total || 0;
-        }
-      }
+      (data.categories||[]).forEach(function(c) { if (m.results && m.results[c]) total += m.results[c].total || 0; });
     }
-    var html = '';
-    html += '<div class="stat-block"><div class="stat-value">' + (data.models ? data.models.length : 0) + '</div><div class="stat-label">Models</div></div>';
-    html += '<div class="stat-block"><div class="stat-value">' + (data.categories ? data.categories.length : 0) + '</div><div class="stat-label">Categories</div></div>';
-    html += '<div class="stat-block"><div class="stat-value">' + totalExamples.toLocaleString() + '</div><div class="stat-label">Examples</div></div>';
-    el.innerHTML = html;
+    el.innerHTML =
+      '<div class="stat-block"><div class="stat-value">' + (data.models?data.models.length:0) + '</div><div class="stat-label">Models</div></div>' +
+      '<div class="stat-block"><div class="stat-value">' + (data.categories?data.categories.length:0) + '</div><div class="stat-label">Categories</div></div>' +
+      '<div class="stat-block"><div class="stat-value">' + total.toLocaleString() + '</div><div class="stat-label">Examples</div></div>';
   }
-
-  /* ---- Render ---- */
 
   function render() {
     var app = document.getElementById("app");
-    if (!data || !data.models || data.models.length === 0) {
-      app.innerHTML = '<div class="error-state">No model data available.</div>';
-      return;
-    }
+    if (!data || !data.models || !data.models.length) { app.innerHTML = '<div class="error-state">No model data available.</div>'; return; }
 
-    var categories = data.categories || Object.keys(CATEGORY_LABELS);
+    var cats = data.categories || Object.keys(CATS);
     var sorted = doSort(data.models);
+    var h = '<div class="table-wrap reveal visible"><table>';
 
-    var html = '<div class="table-wrap animate-in"><table>';
+    h += '<colgroup><col class="col-rank"><col class="col-model"><col class="col-avg">';
+    for (var i=0;i<cats.length;i++) h += '<col class="col-score">';
+    h += '</colgroup>';
 
-    /* Colgroup */
-    html += '<colgroup>';
-    html += '<col class="col-rank">';
-    html += '<col class="col-model">';
-    html += '<col class="col-avg">';
-    for (var ci = 0; ci < categories.length; ci++) {
-      html += '<col class="col-score">';
+    h += '<thead><tr><th>#</th>';
+    h += '<th class="th-model' + (sortKey==="name"?" sort-active":"") + '" data-sort="name">Model<span class="arrow">' + (sortKey==="name"?(sortAsc?"&#9650;":"&#9660;"):"") + '</span></th>';
+    h += '<th class="' + (sortKey==="average"?"sort-active":"") + '" data-sort="average">Avg<span class="arrow">' + (sortKey==="average"?(sortAsc?"&#9650;":"&#9660;"):"") + '</span></th>';
+    for (var i=0;i<cats.length;i++) {
+      var c=cats[i], l=CATS[c]||c;
+      h += '<th class="'+(sortKey===c?"sort-active":"")+'" data-sort="'+c+'">'+l+'<span class="arrow">'+(sortKey===c?(sortAsc?"&#9650;":"&#9660;"):"")+'</span></th>';
     }
-    html += '</colgroup>';
+    h += '</tr></thead><tbody>';
 
-    /* Thead */
-    html += '<thead><tr>';
-    html += '<th>#</th>';
-
-    var nameActive = sortKey === "name" ? " sort-active" : "";
-    html += '<th class="col-model-th' + nameActive + '" data-sort="name">Model<span class="sort-arrow">';
-    html += sortKey === "name" ? (sortAsc ? "&#9650;" : "&#9660;") : "";
-    html += '</span></th>';
-
-    var avgActive = sortKey === "average" ? " sort-active" : "";
-    html += '<th class="' + avgActive + '" data-sort="average">Average<span class="sort-arrow">';
-    html += sortKey === "average" ? (sortAsc ? "&#9650;" : "&#9660;") : "";
-    html += '</span></th>';
-
-    for (var ci = 0; ci < categories.length; ci++) {
-      var cat = categories[ci];
-      var label = CATEGORY_LABELS[cat] || cat.charAt(0).toUpperCase() + cat.slice(1);
-      var catActive = sortKey === cat ? " sort-active" : "";
-      html += '<th class="' + catActive + '" data-sort="' + cat + '">' + label + '<span class="sort-arrow">';
-      html += sortKey === cat ? (sortAsc ? "&#9650;" : "&#9660;") : "";
-      html += '</span></th>';
-    }
-    html += '</tr></thead>';
-
-    /* Tbody */
-    html += '<tbody>';
-    for (var i = 0; i < sorted.length; i++) {
-      var m = sorted[i];
-      var rank = i + 1;
-      var isExpanded = expandedRows.has(m.name);
-      var rankCls = rank <= 3 ? " rank-" + rank : "";
-      var stagger = i < 8 ? " animate-in stagger-" + (i + 1) : "";
-      var parts = splitModelName(m.name);
-
-      html += '<tr class="model-row' + (isExpanded ? " expanded" : "") + stagger + '" data-model="' + escHtml(m.name) + '">';
-
-      /* Rank */
-      html += '<td class="rank-cell' + rankCls + '"><span class="rank-num">' + rank + '</span></td>';
-
-      /* Model name */
-      html += '<td class="model-cell"><div class="model-name-wrap">' + chevronSvg();
-      html += '<span><span class="model-provider">' + escHtml(parts.provider) + '</span><span class="model-id">' + escHtml(parts.id) + '</span></span>';
-      html += '</div></td>';
-
-      /* Average with bar */
-      var avgColor = scoreColor(m.average);
-      html += '<td class="score-cell avg-cell"><div class="score-bar-wrap">';
-      html += makePill(m.average, true);
-      html += makeBar(m.average, 72);
-      html += '</div></td>';
-
-      /* Category scores */
-      for (var ci = 0; ci < categories.length; ci++) {
-        var cat = categories[ci];
-        var sc = (m.results && m.results[cat]) ? m.results[cat].overall : null;
-        html += '<td class="score-cell">' + makePill(sc) + '</td>';
+    for (var i=0;i<sorted.length;i++) {
+      var m=sorted[i], rank=i+1, exp=expandedRows.has(m.name), rc=rank<=3?" rank-"+rank:"";
+      var nm=splitName(m.name);
+      h += '<tr class="model-row'+(exp?" expanded":"")+'" data-model="'+esc(m.name)+'">';
+      h += '<td class="rank-cell'+rc+'"><span class="rank-num">'+rank+'</span></td>';
+      h += '<td class="model-cell"><div class="model-name-wrap">'+chev()+'<span><span class="model-provider">'+esc(nm.p)+'</span><span class="model-id">'+esc(nm.id)+'</span></span></div></td>';
+      h += '<td class="score-cell avg-cell"><div class="score-bar-wrap">'+pill(m.average)+bar(m.average,64)+'</div></td>';
+      for (var ci=0;ci<cats.length;ci++) {
+        var sc = m.results&&m.results[cats[ci]] ? m.results[cats[ci]].overall : null;
+        h += '<td class="score-cell">'+pill(sc)+'</td>';
       }
-      html += '</tr>';
+      h += '</tr>';
 
-      /* Detail row */
-      var colSpan = 3 + categories.length;
-      html += '<tr class="detail-row' + (isExpanded ? " open" : "") + '">';
-      html += '<td colspan="' + colSpan + '">';
-      html += '<div class="detail-inner"><div class="detail-grid">';
-      for (var ci = 0; ci < categories.length; ci++) {
-        var cat = categories[ci];
-        var catResult = m.results ? m.results[cat] : null;
-        if (!catResult) continue;
-        var label = CATEGORY_LABELS[cat] || cat.charAt(0).toUpperCase() + cat.slice(1);
-
-        html += '<div class="detail-card">';
-        html += '<div class="detail-card-header">';
-        html += '<span class="detail-card-title">' + label + '</span>';
-        html += '<span class="detail-card-score">' + makePill(catResult.overall) + '</span>';
-        html += '</div>';
-        html += '<div class="detail-sub-list">';
-
-        var subs = catResult.per_subcategory;
-        if (subs) {
-          var subKeys = Object.keys(subs);
-          subKeys.sort();
-          for (var si = 0; si < subKeys.length; si++) {
-            var sv = subs[subKeys[si]];
-            var sc2 = scoreColor(sv);
-            html += '<div class="detail-sub-row">';
-            html += '<span class="detail-sub-name">' + escHtml(prettySub(subKeys[si])) + '</span>';
-            html += '<span class="detail-sub-score"><div class="detail-sub-bar-wrap">';
-            html += '<div class="detail-sub-bar"><div class="detail-sub-bar-fill" style="width:' + pct(sv) + ';background:' + sc2 + '"></div></div>';
-            html += '<span class="detail-sub-val" style="color:' + sc2 + '">' + fmt(sv) + '</span>';
-            html += '</div></span>';
-            html += '</div>';
+      var cs = 3+cats.length;
+      h += '<tr class="detail-row'+(exp?" open":"")+'"><td colspan="'+cs+'"><div class="detail-inner"><div class="detail-grid">';
+      for (var ci=0;ci<cats.length;ci++) {
+        var cat=cats[ci], cr=m.results?m.results[cat]:null;
+        if (!cr) continue;
+        h += '<div class="detail-card"><div class="detail-card-header"><span class="detail-card-title">'+(CATS[cat]||cat)+'</span>'+pill(cr.overall)+'</div><div class="detail-sub-list">';
+        if (cr.per_subcategory) {
+          var sk=Object.keys(cr.per_subcategory).sort();
+          for (var si=0;si<sk.length;si++) {
+            var sv=cr.per_subcategory[sk[si]], sc2=scoreColor(sv);
+            h += '<div class="detail-sub-row"><span class="detail-sub-name">'+esc(prettySub(sk[si]))+'</span><span class="detail-sub-score">';
+            h += '<div class="detail-sub-bar"><div class="detail-sub-bar-fill" style="width:'+pct(sv)+';background:'+sc2+'"></div></div>';
+            h += '<span class="detail-sub-val" style="color:'+sc2+'">'+fmt(sv)+'</span></span></div>';
           }
         }
-        html += '</div></div>';
+        h += '</div></div>';
       }
-      html += '</div></div></td></tr>';
+      h += '</div></div></td></tr>';
     }
-    html += '</tbody></table></div>';
-
-    app.innerHTML = html;
-    bindEvents();
+    h += '</tbody></table></div>';
+    app.innerHTML = h;
+    bind();
   }
 
-  /* ---- Events ---- */
-
-  function bindEvents() {
-    var ths = document.querySelectorAll("thead th[data-sort]");
-    for (var i = 0; i < ths.length; i++) {
-      ths[i].addEventListener("click", handleSort);
-    }
-    var rows = document.querySelectorAll("tr.model-row");
-    for (var i = 0; i < rows.length; i++) {
-      rows[i].addEventListener("click", handleExpand);
-    }
+  function bind() {
+    document.querySelectorAll("thead th[data-sort]").forEach(function(th) { th.addEventListener("click", onSort); });
+    document.querySelectorAll("tr.model-row").forEach(function(tr) { tr.addEventListener("click", onExpand); });
   }
 
-  function handleSort(e) {
-    var key = e.currentTarget.getAttribute("data-sort");
-    if (key === sortKey) {
-      sortAsc = !sortAsc;
-    } else {
-      sortKey = key;
-      sortAsc = key === "name";
-    }
+  function onSort(e) {
+    var k = e.currentTarget.getAttribute("data-sort");
+    if (k === sortKey) sortAsc = !sortAsc;
+    else { sortKey = k; sortAsc = k === "name"; }
     render();
   }
 
-  function handleExpand(e) {
-    var name = e.currentTarget.getAttribute("data-model");
-    if (expandedRows.has(name)) {
-      expandedRows.delete(name);
-    } else {
-      expandedRows.add(name);
-    }
+  function onExpand(e) {
+    var n = e.currentTarget.getAttribute("data-model");
+    expandedRows.has(n) ? expandedRows.delete(n) : expandedRows.add(n);
     render();
   }
-
-  /* ---- Footer ---- */
 
   function updateFooter() {
     var el = document.getElementById("last-updated");
     if (!data || !data.generated_at) { el.textContent = ""; return; }
     var d = new Date(data.generated_at);
-    var opts = { year: "numeric", month: "long", day: "numeric" };
-    var t = { hour: "2-digit", minute: "2-digit" };
-    el.textContent = "Last updated " + d.toLocaleDateString("en-US", opts) + " at " + d.toLocaleTimeString("en-US", t);
+    el.textContent = "Updated " + d.toLocaleDateString("en-US", {year:"numeric",month:"long",day:"numeric"});
   }
 
-  /* ---- Init ---- */
-
   fetch("data.json")
-    .then(function (res) {
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      return res.json();
-    })
-    .then(function (json) {
-      data = json;
-      renderHeaderStats();
-      updateFooter();
-      render();
-    })
-    .catch(function (err) {
-      document.getElementById("app").innerHTML =
-        '<div class="error-state">Failed to load data.json: ' + escHtml(err.message) + '</div>';
-    });
+    .then(function(r) { if (!r.ok) throw new Error("HTTP "+r.status); return r.json(); })
+    .then(function(j) { data=j; renderStats(); updateFooter(); render(); })
+    .catch(function(e) { document.getElementById("app").innerHTML='<div class="error-state">Failed to load data: '+esc(e.message)+'</div>'; });
 })();
 </script>
 </body>
