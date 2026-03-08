@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-08T20:01:02.340971+00:00",
+  "generated_at": "2026-03-08T20:18:20.562918+00:00",
   "categories": [
     "core",
     "tool",
@@ -237,6 +237,57 @@
         }
       },
       "average": 0.4547
+    },
+    {
+      "name": "google/gemma-2-9b-it",
+      "results": {
+        "core": {
+          "overall": 0.4433,
+          "total": 500,
+          "timestamp": 1773000999,
+          "per_subcategory": {
+            "reading_comprehension": 0.3237,
+            "common_sense": 0.97,
+            "grammar": 0.1553,
+            "translation": 0.3693,
+            "summarization": 0.3982
+          }
+        },
+        "fin": {
+          "overall": 0.321,
+          "total": 500,
+          "timestamp": 1773001062,
+          "per_subcategory": {
+            "document_comprehension": 0.1355,
+            "sentiment": 0.68,
+            "numerical_reasoning": 0.2021,
+            "term_understanding": 0.2665
+          }
+        },
+        "legal": {
+          "overall": 0.1857,
+          "total": 478,
+          "timestamp": 1773001095,
+          "per_subcategory": {
+            "document_comprehension": 0.1337,
+            "regulatory_compliance": 0.1799,
+            "case_reasoning": 0.1357,
+            "clause_extraction": 0.5368
+          }
+        },
+        "tool": {
+          "overall": 0.547,
+          "total": 507,
+          "timestamp": 1773001034,
+          "per_subcategory": {
+            "api_call": 0.6603,
+            "multi_step": 0.3226,
+            "parameter_extraction": 0.6782,
+            "error_recovery": 0.2023
+          }
+        }
+      },
+      "average": 0.3743
     },
     {
       "name": "liquid/lfm-2-24b-a2b",
