@@ -194,13 +194,19 @@ class BaseGenerator(ABC):
                         if generated >= target:
                             break
                         self._count += 1
+                        expected = ex_data["expected_output"]
+                        if not isinstance(expected, str):
+                            expected = json.dumps(expected, ensure_ascii=False)
+                        inp = ex_data["input"]
+                        if not isinstance(inp, str):
+                            inp = json.dumps(inp, ensure_ascii=False)
                         example = Example(
                             id=self._make_id(self._count),
                             category=self.category,
                             subcategory=subcat,
                             difficulty=ex_data.get("difficulty", "medium"),
-                            input=ex_data["input"],
-                            expected_output=ex_data["expected_output"],
+                            input=inp,
+                            expected_output=expected,
                             metadata=ex_data.get("metadata", {}),
                         )
                         self._save_example(example)
