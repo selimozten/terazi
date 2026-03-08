@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import time
 from pathlib import Path
 from typing import Any
@@ -16,6 +17,8 @@ from terazi.eval.formats import load_jsonl
 from terazi.eval.metrics import get_metric_fn
 
 console = Console()
+
+OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
 
 class EvalResult(BaseModel):
@@ -61,29 +64,42 @@ class HFBackend(ModelBackend):
 
 
 class APIBackend(ModelBackend):
-    """OpenAI-compatible API backend."""
+    """OpenAI-compatible API backend (works with OpenRouter, OpenAI, etc.)."""
 
     def __init__(
         self,
         model_name: str,
-        base_url: str = "https://api.openai.com/v1",
+        base_url: str = OPENROUTER_BASE_URL,
         api_key: str | None = None,
         max_tokens: int = 512,
+        max_retries: int = 5,
     ) -> None:
         import openai
 
-        self.client = openai.OpenAI(base_url=base_url, api_key=api_key)
+        resolved_key = api_key or os.environ.get("OPENROUTER_API_KEY", "")
+        self.client = openai.OpenAI(base_url=base_url, api_key=resolved_key)
         self.model_name = model_name
         self.max_tokens = max_tokens
+        self.max_retries = max_retries
 
     def generate(self, prompt: str) -> str:
-        response = self.client.chat.completions.create(
-            model=self.model_name,
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=self.max_tokens,
-            temperature=0,
-        )
-        return response.choices[0].message.content or ""
+        for attempt in range(self.max_retries):
+            try:
+                response = self.client.chat.completions.create(
+                    model=self.model_name,
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=self.max_tokens,
+                    temperature=0,
+                )
+                return response.choices[0].message.content or ""
+            except Exception as e:
+                if attempt < self.max_retries - 1:
+                    delay = 2 ** attempt
+                    console.print(f"[yellow]API error: {e}. Retrying in {delay}s...[/yellow]")
+                    time.sleep(delay)
+                    continue
+                raise
+        return ""
 
 
 class EvalRunner:

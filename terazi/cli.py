@@ -61,13 +61,14 @@ def generate(
 
 
 @cli.command("eval")
-@click.option("--model", "-m", required=True, help="Model name (HF model ID or API model)")
+@click.option("--model", "-m", required=True, help="Model name (e.g. google/gemini-2.5-flash)")
 @click.option("--categories", "-c", type=str, default="core,tool,fin,legal")
-@click.option("--backend", type=click.Choice(["hf", "api"]), default="hf")
-@click.option("--base-url", type=str, default=None, help="API base URL (for api backend)")
-@click.option("--api-key", type=str, default=None, help="API key (for api backend)")
+@click.option("--backend", type=click.Choice(["hf", "api"]), default="api")
+@click.option("--base-url", type=str, default=None, help="API base URL (default: OpenRouter)")
+@click.option("--api-key", type=str, default=None, help="API key (or set OPENROUTER_API_KEY)")
 @click.option("--data-dir", type=click.Path(), default="data")
 @click.option("--results-dir", type=click.Path(), default="results")
+@click.option("--max-tokens", type=int, default=512, help="Max tokens for model response")
 @click.option("--difficulty", type=click.Choice(["easy", "medium", "hard"]), default=None, help="Filter by difficulty")
 @click.option("--sample", type=int, default=None, help="Run on a random subset of N examples")
 def evaluate(
@@ -78,6 +79,7 @@ def evaluate(
     api_key: str | None,
     data_dir: str,
     results_dir: str,
+    max_tokens: int,
     difficulty: str | None,
     sample: int | None,
 ) -> None:
@@ -89,7 +91,12 @@ def evaluate(
     if backend == "hf":
         model_backend = HFBackend(model)
     else:
-        model_backend = APIBackend(model, base_url=base_url or "https://api.openai.com/v1", api_key=api_key)
+        kwargs: dict = {"model_name": model, "max_tokens": max_tokens}
+        if base_url:
+            kwargs["base_url"] = base_url
+        if api_key:
+            kwargs["api_key"] = api_key
+        model_backend = APIBackend(**kwargs)
 
     runner = EvalRunner(data_dir=Path(data_dir), results_dir=Path(results_dir))
     results = runner.run(model_backend, model, cat_list, difficulty=difficulty, sample=sample)
