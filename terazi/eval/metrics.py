@@ -13,6 +13,25 @@ def exact_match(predicted: str, expected: str) -> float:
     return 1.0 if _normalize(predicted) == _normalize(expected) else 0.0
 
 
+def choice_match(predicted: str, expected: str) -> float:
+    """Match multiple-choice answers by extracting the answer letter/prefix."""
+    pred_choice = _extract_choice(predicted)
+    exp_choice = _extract_choice(expected)
+    if pred_choice and exp_choice:
+        return 1.0 if pred_choice == exp_choice else 0.0
+    # Fallback to F1 if no choice letter found
+    return f1_score(predicted, expected)
+
+
+def sentiment_match(predicted: str, expected: str) -> float:
+    """Match sentiment labels (pozitif/negatif/nötr) extracted from text."""
+    pred_sent = _extract_sentiment(predicted)
+    exp_sent = _extract_sentiment(expected)
+    if pred_sent and exp_sent:
+        return 1.0 if pred_sent == exp_sent else 0.0
+    return 0.0
+
+
 def f1_score(predicted: str, expected: str) -> float:
     """Token-level F1 score for extraction tasks."""
     pred_tokens = _normalize(predicted).split()
@@ -52,11 +71,14 @@ def rouge_l(predicted: str, expected: str) -> float:
 
 
 def tool_call_match(predicted: str, expected: str) -> float:
-    """Exact match on tool call: function name and parameters."""
+    """Match tool calls: function name and parameters with partial credit."""
     try:
         pred = _parse_tool_call(predicted)
         exp = _parse_tool_call(expected)
-    except (json.JSONDecodeError, KeyError, TypeError):
+    except (json.JSONDecodeError, KeyError, TypeError, ValueError, AttributeError):
+        return 0.0
+
+    if not isinstance(pred, dict) or not isinstance(exp, dict):
         return 0.0
 
     if pred.get("tool") != exp.get("tool"):
@@ -82,7 +104,7 @@ def get_metric_fn(category: str) -> dict[str, MetricFn]:
     metric_map: dict[str, dict[str, MetricFn]] = {
         "core": {
             "reading_comprehension": f1_score,
-            "common_sense": exact_match,
+            "common_sense": choice_match,
             "grammar": f1_score,
             "translation": bleu,
             "summarization": rouge_l,
@@ -95,7 +117,7 @@ def get_metric_fn(category: str) -> dict[str, MetricFn]:
         },
         "fin": {
             "document_comprehension": f1_score,
-            "sentiment": exact_match,
+            "sentiment": sentiment_match,
             "numerical_reasoning": f1_score,
             "term_understanding": f1_score,
         },
@@ -116,11 +138,48 @@ def _normalize(text: str) -> str:
     return text
 
 
+def _extract_choice(text: str) -> str | None:
+    """Extract multiple-choice answer letter (A, B, C, D) from text."""
+    text = text.strip()
+    # Match patterns like "B)", "B.", "Cevap: B", "Doğru cevap B)"
+    match = re.search(r"\b([A-D])\s*[\)\.:]", text)
+    if match:
+        return match.group(1).upper()
+    # Try "Cevap: X" or "cevap X"
+    match = re.search(r"(?:cevap|doğru|yanıt)[:\s]*([A-D])\b", text, re.IGNORECASE)
+    if match:
+        return match.group(1).upper()
+    # Just a single letter at the start
+    match = re.match(r"^([A-D])\b", text)
+    if match:
+        return match.group(1).upper()
+    return None
+
+
+def _extract_sentiment(text: str) -> str | None:
+    """Extract sentiment label from text."""
+    text = text.strip().lower()
+    for label in ["pozitif", "negatif", "nötr", "notr"]:
+        if label in text:
+            return "nötr" if label in ("nötr", "notr") else label
+    return None
+
+
 def _parse_tool_call(text: str) -> dict[str, Any]:
     text = text.strip()
-    if not text.startswith("{"):
-        # Try to find JSON in text
+    # Remove markdown code fences
+    if text.startswith("```"):
+        lines = text.split("\n")
+        lines = lines[1:]
+        if lines and lines[-1].strip().startswith("```"):
+            lines = lines[:-1]
+        text = "\n".join(lines).strip()
+    if not text.startswith("{") and not text.startswith("["):
         match = re.search(r"\{.*\}", text, re.DOTALL)
         if match:
             text = match.group()
-    return json.loads(text)
+    parsed = json.loads(text)
+    # Handle list of tool calls (multi_step) — score first call
+    if isinstance(parsed, list) and parsed:
+        parsed = parsed[0]
+    return parsed

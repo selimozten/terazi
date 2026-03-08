@@ -11,11 +11,11 @@ from typing import Any
 
 from pydantic import BaseModel
 from rich.console import Console
-from rich.progress import Progress
 from rich.table import Table
 
 from terazi.eval.formats import load_jsonl
 from terazi.eval.metrics import get_metric_fn
+from terazi.eval.prompts import get_system_prompt
 
 console = Console()
 
@@ -35,11 +35,11 @@ class EvalResult(BaseModel):
 class ModelBackend:
     """Base class for model inference backends."""
 
-    def generate(self, prompt: str) -> str:
+    def generate(self, prompt: str, system_prompt: str = "") -> str:
         raise NotImplementedError
 
-    async def agenerate(self, prompt: str) -> str:
-        return self.generate(prompt)
+    async def agenerate(self, prompt: str, system_prompt: str = "") -> str:
+        return self.generate(prompt, system_prompt)
 
 
 class HFBackend(ModelBackend):
@@ -57,8 +57,9 @@ class HFBackend(ModelBackend):
         )
         self.max_new_tokens = max_new_tokens
 
-    def generate(self, prompt: str) -> str:
-        inputs = self.tokenizer(prompt, return_tensors="pt").to(self.model.device)
+    def generate(self, prompt: str, system_prompt: str = "") -> str:
+        full_prompt = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
+        inputs = self.tokenizer(full_prompt, return_tensors="pt").to(self.model.device)
         outputs = self.model.generate(
             **inputs,
             max_new_tokens=self.max_new_tokens,
@@ -88,12 +89,20 @@ class APIBackend(ModelBackend):
         self.max_tokens = max_tokens
         self.max_retries = max_retries
 
-    def generate(self, prompt: str) -> str:
+    def _build_messages(self, prompt: str, system_prompt: str) -> list[dict[str, str]]:
+        msgs: list[dict[str, str]] = []
+        if system_prompt:
+            msgs.append({"role": "system", "content": system_prompt})
+        msgs.append({"role": "user", "content": prompt})
+        return msgs
+
+    def generate(self, prompt: str, system_prompt: str = "") -> str:
+        messages = self._build_messages(prompt, system_prompt)
         for attempt in range(self.max_retries):
             try:
                 response = self.client.chat.completions.create(
                     model=self.model_name,
-                    messages=[{"role": "user", "content": prompt}],
+                    messages=messages,
                     max_tokens=self.max_tokens,
                     temperature=0,
                 )
@@ -106,12 +115,13 @@ class APIBackend(ModelBackend):
                 raise
         return ""
 
-    async def agenerate(self, prompt: str) -> str:
+    async def agenerate(self, prompt: str, system_prompt: str = "") -> str:
+        messages = self._build_messages(prompt, system_prompt)
         for attempt in range(self.max_retries):
             try:
                 response = await self.async_client.chat.completions.create(
                     model=self.model_name,
-                    messages=[{"role": "user", "content": prompt}],
+                    messages=messages,
                     max_tokens=self.max_tokens,
                     temperature=0,
                 )
@@ -190,10 +200,11 @@ class EvalRunner:
             nonlocal completed
             subcat = ex.get("subcategory", "unknown")
             metric_fn = metric_fns.get(subcat, metric_fns.get(list(metric_fns.keys())[0]))
+            system_prompt = get_system_prompt(category, subcat)
 
             async with semaphore:
                 try:
-                    predicted = await backend.agenerate(ex["input"])
+                    predicted = await backend.agenerate(ex["input"], system_prompt)
                 except Exception as e:
                     console.print(f"[red]Error on {ex['id']}: {e}[/red]")
                     predicted = ""
