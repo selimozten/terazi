@@ -42,7 +42,7 @@ class BaseGenerator(ABC):
         output_dir: Path = Path("data"),
         model_id: str = DEFAULT_MODEL_ID,
         region: str = DEFAULT_REGION,
-        max_tokens: int = 4096,
+        max_tokens: int = 8192,
         temperature: float = 1.0,
         api_key: str | None = None,
     ) -> None:
