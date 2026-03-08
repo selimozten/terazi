@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-08T18:37:49.546790+00:00",
+  "generated_at": "2026-03-08T19:31:56.543463+00:00",
   "categories": [
     "core",
     "tool",
@@ -34,6 +34,57 @@
     ]
   },
   "models": [
+    {
+      "name": "deepseek/deepseek-v3.2",
+      "results": {
+        "core": {
+          "overall": 0.51,
+          "total": 500,
+          "timestamp": 1772997506,
+          "per_subcategory": {
+            "reading_comprehension": 0.4691,
+            "common_sense": 0.97,
+            "grammar": 0.2703,
+            "translation": 0.4174,
+            "summarization": 0.4233
+          }
+        },
+        "fin": {
+          "overall": 0.4167,
+          "total": 500,
+          "timestamp": 1772997975,
+          "per_subcategory": {
+            "document_comprehension": 0.2915,
+            "sentiment": 0.776,
+            "numerical_reasoning": 0.298,
+            "term_understanding": 0.3011
+          }
+        },
+        "legal": {
+          "overall": 0.325,
+          "total": 478,
+          "timestamp": 1772998307,
+          "per_subcategory": {
+            "document_comprehension": 0.3084,
+            "regulatory_compliance": 0.3349,
+            "case_reasoning": 0.2488,
+            "clause_extraction": 0.5467
+          }
+        },
+        "tool": {
+          "overall": 0.8,
+          "total": 507,
+          "timestamp": 1772997711,
+          "per_subcategory": {
+            "api_call": 0.872,
+            "multi_step": 0.7963,
+            "parameter_extraction": 0.8412,
+            "error_recovery": 0.2663
+          }
+        }
+      },
+      "average": 0.5129
+    },
     {
       "name": "google/gemini-3.1-flash-lite-preview",
       "results": {
