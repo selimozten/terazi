@@ -68,9 +68,10 @@ def generate(
 @click.option("--api-key", type=str, default=None, help="API key (or set OPENROUTER_API_KEY)")
 @click.option("--data-dir", type=click.Path(), default="data")
 @click.option("--results-dir", type=click.Path(), default="results")
-@click.option("--max-tokens", type=int, default=512, help="Max tokens for model response")
+@click.option("--max-tokens", type=int, default=2048, help="Max tokens for model response")
 @click.option("--difficulty", type=click.Choice(["easy", "medium", "hard"]), default=None, help="Filter by difficulty")
 @click.option("--sample", type=int, default=None, help="Run on a random subset of N examples")
+@click.option("--concurrency", type=int, default=20, help="Number of concurrent API requests")
 def evaluate(
     model: str,
     categories: str,
@@ -82,6 +83,7 @@ def evaluate(
     max_tokens: int,
     difficulty: str | None,
     sample: int | None,
+    concurrency: int,
 ) -> None:
     """Run a model against terazi benchmarks."""
     from terazi.eval.runner import APIBackend, EvalRunner, HFBackend, print_results
@@ -98,7 +100,7 @@ def evaluate(
             kwargs["api_key"] = api_key
         model_backend = APIBackend(**kwargs)
 
-    runner = EvalRunner(data_dir=Path(data_dir), results_dir=Path(results_dir))
+    runner = EvalRunner(data_dir=Path(data_dir), results_dir=Path(results_dir), concurrency=concurrency)
     results = runner.run(model_backend, model, cat_list, difficulty=difficulty, sample=sample)
     print_results(results)
 

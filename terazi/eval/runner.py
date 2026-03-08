@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import time
@@ -19,6 +20,7 @@ from terazi.eval.metrics import get_metric_fn
 console = Console()
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+DEFAULT_CONCURRENCY = 20
 
 
 class EvalResult(BaseModel):
@@ -35,6 +37,9 @@ class ModelBackend:
 
     def generate(self, prompt: str) -> str:
         raise NotImplementedError
+
+    async def agenerate(self, prompt: str) -> str:
+        return self.generate(prompt)
 
 
 class HFBackend(ModelBackend):
@@ -71,13 +76,14 @@ class APIBackend(ModelBackend):
         model_name: str,
         base_url: str = OPENROUTER_BASE_URL,
         api_key: str | None = None,
-        max_tokens: int = 512,
+        max_tokens: int = 2048,
         max_retries: int = 5,
     ) -> None:
         import openai
 
         resolved_key = api_key or os.environ.get("OPENROUTER_API_KEY", "")
         self.client = openai.OpenAI(base_url=base_url, api_key=resolved_key)
+        self.async_client = openai.AsyncOpenAI(base_url=base_url, api_key=resolved_key)
         self.model_name = model_name
         self.max_tokens = max_tokens
         self.max_retries = max_retries
@@ -95,8 +101,25 @@ class APIBackend(ModelBackend):
             except Exception as e:
                 if attempt < self.max_retries - 1:
                     delay = 2 ** attempt
-                    console.print(f"[yellow]API error: {e}. Retrying in {delay}s...[/yellow]")
                     time.sleep(delay)
+                    continue
+                raise
+        return ""
+
+    async def agenerate(self, prompt: str) -> str:
+        for attempt in range(self.max_retries):
+            try:
+                response = await self.async_client.chat.completions.create(
+                    model=self.model_name,
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=self.max_tokens,
+                    temperature=0,
+                )
+                return response.choices[0].message.content or ""
+            except Exception as e:
+                if attempt < self.max_retries - 1:
+                    delay = 2 ** attempt
+                    await asyncio.sleep(delay)
                     continue
                 raise
         return ""
@@ -109,10 +132,12 @@ class EvalRunner:
         self,
         data_dir: Path = Path("data"),
         results_dir: Path = Path("results"),
+        concurrency: int = DEFAULT_CONCURRENCY,
     ) -> None:
         self.data_dir = data_dir
         self.results_dir = results_dir
         self.results_dir.mkdir(parents=True, exist_ok=True)
+        self.concurrency = concurrency
 
     def run(
         self,
@@ -131,13 +156,15 @@ class EvalRunner:
                 console.print(f"[yellow]No data for {category}, skipping[/yellow]")
                 continue
 
-            result = self._eval_category(backend, model_name, category, data_file, difficulty, sample)
+            result = asyncio.run(
+                self._eval_category(backend, model_name, category, data_file, difficulty, sample)
+            )
             results.append(result)
             self._save_result(result)
 
         return results
 
-    def _eval_category(
+    async def _eval_category(
         self,
         backend: ModelBackend,
         model_name: str,
@@ -153,31 +180,43 @@ class EvalRunner:
             examples = random.sample(examples, sample)
         metric_fns = get_metric_fn(category)
 
-        scored_examples = []
-        subcategory_scores: dict[str, list[float]] = {}
-
         console.print(f"\n[bold]Evaluating {model_name} on terazi-{category}[/bold]")
-        console.print(f"  Examples: {len(examples)}")
+        console.print(f"  Examples: {len(examples)}, concurrency: {self.concurrency}")
 
-        with Progress(console=console) as progress:
-            task = progress.add_task(f"terazi-{category}", total=len(examples))
+        semaphore = asyncio.Semaphore(self.concurrency)
+        completed = 0
 
-            for ex in examples:
-                subcat = ex.get("subcategory", "unknown")
-                metric_fn = metric_fns.get(subcat, metric_fns.get(list(metric_fns.keys())[0]))
+        async def process_example(ex: dict[str, Any]) -> dict[str, Any]:
+            nonlocal completed
+            subcat = ex.get("subcategory", "unknown")
+            metric_fn = metric_fns.get(subcat, metric_fns.get(list(metric_fns.keys())[0]))
 
-                predicted = backend.generate(ex["input"])
-                score = metric_fn(predicted, ex["expected_output"])
+            async with semaphore:
+                try:
+                    predicted = await backend.agenerate(ex["input"])
+                except Exception as e:
+                    console.print(f"[red]Error on {ex['id']}: {e}[/red]")
+                    predicted = ""
 
-                subcategory_scores.setdefault(subcat, []).append(score)
-                scored_examples.append({
-                    "id": ex["id"],
-                    "subcategory": subcat,
-                    "score": score,
-                    "predicted": predicted,
-                    "expected": ex["expected_output"],
-                })
-                progress.advance(task)
+            score = metric_fn(predicted, ex["expected_output"])
+            completed += 1
+            if completed % 50 == 0 or completed == len(examples):
+                console.print(f"  [{completed}/{len(examples)}]")
+
+            return {
+                "id": ex["id"],
+                "subcategory": subcat,
+                "score": score,
+                "predicted": predicted,
+                "expected": ex["expected_output"],
+            }
+
+        tasks = [process_example(ex) for ex in examples]
+        scored_examples = await asyncio.gather(*tasks)
+
+        subcategory_scores: dict[str, list[float]] = {}
+        for se in scored_examples:
+            subcategory_scores.setdefault(se["subcategory"], []).append(se["score"])
 
         per_sub = {
             sub: {"mean": sum(s) / len(s), "count": len(s)}
