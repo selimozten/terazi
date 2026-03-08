@@ -265,3 +265,40 @@ def convert(data_dir: str, category: str, fmt: str, output: str) -> None:
             json.dump(columns, f, ensure_ascii=False, indent=2)
 
     console.print(f"[green]Converted {len(examples)} examples to {fmt} format: {output_path}[/green]")
+
+
+@cli.command()
+@click.option("--results-dir", type=click.Path(), default="results")
+@click.option("--output", "-o", type=click.Path(), default="docs/data.json")
+def leaderboard(results_dir: str, output: str) -> None:
+    """Generate leaderboard data.json for the GitHub Pages site."""
+    from rich.table import Table
+
+    from terazi.leaderboard import write_leaderboard
+
+    results_path = Path(results_dir)
+    if not results_path.exists():
+        console.print("[red]No results directory found.[/red]")
+        return
+
+    output_path = Path(output)
+    data = write_leaderboard(results_path, output_path)
+
+    table = Table(title="terazi leaderboard")
+    table.add_column("#", justify="right")
+    table.add_column("Model", style="bold")
+    table.add_column("Average", justify="right")
+    for cat in data["categories"]:
+        table.add_column(cat.capitalize(), justify="right")
+
+    for i, model in enumerate(data["models"], 1):
+        row = [str(i), model["name"], f"{model['average']:.4f}"]
+        for cat in data["categories"]:
+            if cat in model["results"]:
+                row.append(f"{model['results'][cat]['overall']:.4f}")
+            else:
+                row.append("--")
+        table.add_row(*row)
+
+    console.print(table)
+    console.print(f"[green]Wrote {output_path} ({len(data['models'])} models)[/green]")

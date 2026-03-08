@@ -1,0 +1,89 @@
+{
+  "generated_at": "2026-03-08T16:54:22.168806+00:00",
+  "categories": [
+    "core",
+    "tool",
+    "fin",
+    "legal"
+  ],
+  "subcategories": {
+    "core": [
+      "common_sense",
+      "grammar",
+      "reading_comprehension",
+      "summarization",
+      "translation"
+    ],
+    "tool": [
+      "api_call",
+      "error_recovery",
+      "multi_step",
+      "parameter_extraction"
+    ],
+    "fin": [
+      "document_comprehension",
+      "numerical_reasoning",
+      "sentiment",
+      "term_understanding"
+    ],
+    "legal": [
+      "case_reasoning",
+      "clause_extraction",
+      "document_comprehension",
+      "regulatory_compliance"
+    ]
+  },
+  "models": [
+    {
+      "name": "google/gemini-3.1-flash-lite-preview",
+      "results": {
+        "core": {
+          "overall": 0.5166,
+          "total": 500,
+          "timestamp": 1772987634,
+          "per_subcategory": {
+            "reading_comprehension": 0.4688,
+            "common_sense": 0.97,
+            "grammar": 0.2771,
+            "translation": 0.4832,
+            "summarization": 0.3838
+          }
+        },
+        "fin": {
+          "overall": 0.4198,
+          "total": 500,
+          "timestamp": 1772987722,
+          "per_subcategory": {
+            "document_comprehension": 0.2208,
+            "sentiment": 0.856,
+            "numerical_reasoning": 0.2671,
+            "term_understanding": 0.3351
+          }
+        },
+        "legal": {
+          "overall": 0.3099,
+          "total": 478,
+          "timestamp": 1772987763,
+          "per_subcategory": {
+            "document_comprehension": 0.2753,
+            "regulatory_compliance": 0.3697,
+            "case_reasoning": 0.2689,
+            "clause_extraction": 0.5472
+          }
+        },
+        "tool": {
+          "overall": 0.6951,
+          "total": 507,
+          "timestamp": 1772987673,
+          "per_subcategory": {
+            "api_call": 0.6954,
+            "multi_step": 0.8013,
+            "parameter_extraction": 0.7773,
+            "error_recovery": 0.2572
+          }
+        }
+      },
+      "average": 0.4854
+    }
+  ]
+}

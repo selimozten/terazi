@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>terazi -- Turkish LLM Leaderboard</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-secondary: #f6f7f9;
+    --bg-tertiary: #edeef1;
+    --text: #1a1a2e;
+    --text-secondary: #555770;
+    --border: #d8dae5;
+    --border-light: #e8eaf0;
+    --accent: #2d5de0;
+    --accent-hover: #1e4bc4;
+    --header-bg: #ffffff;
+    --row-hover: #f0f2f8;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+    --shadow-lg: 0 8px 30px rgba(0,0,0,0.10);
+    --pill-sat: 80%;
+    --pill-lit: 35%;
+    --expand-bg: #f4f5f9;
+    --sub-header-bg: #e9ebf2;
+    --radius: 8px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1117;
+      --bg-secondary: #161822;
+      --bg-tertiary: #1e2030;
+      --text: #e2e4ed;
+      --text-secondary: #9498b0;
+      --border: #2a2d40;
+      --border-light: #232538;
+      --accent: #5b8af0;
+      --accent-hover: #7ba3ff;
+      --header-bg: #161822;
+      --row-hover: #1c1f30;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+      --shadow-lg: 0 8px 30px rgba(0,0,0,0.5);
+      --pill-sat: 70%;
+      --pill-lit: 45%;
+      --expand-bg: #181a28;
+      --sub-header-bg: #1e2034;
+      --radius: 8px;
+    }
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+    width: 100%;
+  }
+
+  /* ---- Header ---- */
+  header {
+    padding: 48px 0 36px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+  }
+
+  header h1 span.brand {
+    color: var(--accent);
+  }
+
+  header p.subtitle {
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+    max-width: 600px;
+  }
+
+  /* ---- Main ---- */
+  main {
+    flex: 1;
+    padding: 32px 0 48px;
+  }
+
+  .loading-state, .error-state {
+    text-align: center;
+    padding: 80px 24px;
+    color: var(--text-secondary);
+    font-size: 1rem;
+  }
+
+  .error-state {
+    color: #d44;
+  }
+
+  /* ---- Table wrapper ---- */
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 720px;
+    table-layout: fixed;
+  }
+
+  /* Column widths */
+  col.col-rank   { width: 52px; }
+  col.col-model  { width: auto; }
+  col.col-score  { width: 100px; }
+
+  thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  thead th {
+    background: var(--header-bg);
+    font-weight: 600;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text-secondary);
+    padding: 14px 16px;
+    text-align: left;
+    border-bottom: 2px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    position: relative;
+    transition: color 0.15s;
+  }
+
+  thead th:hover {
+    color: var(--text);
+  }
+
+  thead th.sort-active {
+    color: var(--accent);
+  }
+
+  thead th .sort-arrow {
+    display: inline-block;
+    margin-left: 4px;
+    font-size: 0.7rem;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  thead th.sort-active .sort-arrow {
+    opacity: 1;
+  }
+
+  thead th:not(.col-model-th) {
+    text-align: center;
+  }
+
+  /* Rank column */
+  thead th:first-child {
+    text-align: center;
+    cursor: default;
+  }
+
+  /* ---- Body rows ---- */
+  tbody tr.model-row {
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+
+  tbody tr.model-row:hover {
+    background: var(--row-hover);
+  }
+
+  tbody tr.model-row:not(:last-of-type) td {
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  tbody td {
+    padding: 12px 16px;
+    font-size: 0.92rem;
+    vertical-align: middle;
+  }
+
+  tbody td.rank-cell {
+    text-align: center;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+    font-family: "SF Mono", "Cascadia Code", "Fira Mono", "Consolas", monospace;
+  }
+
+  tbody td.model-cell {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 0;
+  }
+
+  tbody td.score-cell {
+    text-align: center;
+    font-family: "SF Mono", "Cascadia Code", "Fira Mono", "Consolas", monospace;
+    font-size: 0.85rem;
+  }
+
+  /* ---- Score pill ---- */
+  .pill {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.82rem;
+    color: #fff;
+    min-width: 52px;
+    text-align: center;
+    letter-spacing: 0.2px;
+    line-height: 1.4;
+  }
+
+  .pill-na {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    font-weight: 400;
+    font-size: 0.78rem;
+  }
+
+  /* ---- Sticky model column on mobile ---- */
+  @media (max-width: 800px) {
+    thead th:nth-child(1),
+    tbody td:nth-child(1) {
+      position: sticky;
+      left: 0;
+      z-index: 5;
+      background: var(--bg);
+    }
+
+    thead th:nth-child(2),
+    tbody td:nth-child(2) {
+      position: sticky;
+      left: 52px;
+      z-index: 5;
+      background: var(--bg);
+      border-right: 2px solid var(--border);
+    }
+
+    thead th:nth-child(1),
+    thead th:nth-child(2) {
+      background: var(--header-bg);
+      z-index: 11;
+    }
+
+    tbody tr.model-row:hover td:nth-child(1),
+    tbody tr.model-row:hover td:nth-child(2) {
+      background: var(--row-hover);
+    }
+  }
+
+  /* ---- Expanded detail row ---- */
+  tr.detail-row {
+    display: none;
+  }
+
+  tr.detail-row.open {
+    display: table-row;
+  }
+
+  tr.detail-row td {
+    padding: 0;
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .detail-inner {
+    padding: 20px 24px;
+    background: var(--expand-bg);
+  }
+
+  .detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+  }
+
+  .detail-category {
+    background: var(--bg);
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .detail-category-header {
+    padding: 8px 14px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+    background: var(--sub-header-bg);
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .detail-category-header .cat-overall {
+    font-family: "SF Mono", "Cascadia Code", "Fira Mono", "Consolas", monospace;
+    font-size: 0.78rem;
+  }
+
+  .detail-sub-list {
+    padding: 6px 0;
+  }
+
+  .detail-sub-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 14px;
+    font-size: 0.84rem;
+  }
+
+  .detail-sub-row:not(:last-child) {
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .detail-sub-name {
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 12px;
+  }
+
+  .detail-sub-score {
+    flex-shrink: 0;
+  }
+
+  /* ---- Expand chevron ---- */
+  .chevron {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    margin-right: 8px;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+
+  .chevron svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: var(--text-secondary);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  tr.model-row.expanded .chevron {
+    transform: rotate(90deg);
+  }
+
+  .model-name-wrap {
+    display: flex;
+    align-items: center;
+  }
+
+  /* ---- Footer ---- */
+  footer {
+    padding: 24px 0;
+    border-top: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+  }
+
+  .footer-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  footer a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  footer a:hover {
+    text-decoration: underline;
+    color: var(--accent-hover);
+  }
+
+  /* ---- Misc ---- */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    border: 0;
+  }
+
+  /* top-3 medal colors */
+  .rank-1 { color: #c9a625 !important; font-weight: 700 !important; }
+  .rank-2 { color: #8a8e99 !important; font-weight: 700 !important; }
+  .rank-3 { color: #b07340 !important; font-weight: 700 !important; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <h1><span class="brand">terazi</span> &mdash; Turkish LLM Leaderboard</h1>
+    <p class="subtitle">Independent benchmark for evaluating large language models on Turkish-language tasks across core reasoning, tool use, finance, and legal domains.</p>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+    <div id="app">
+      <div class="loading-state" id="loading">Loading leaderboard data...</div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <span id="last-updated"></span>
+      <a href="https://github.com/selimozten/terazi" target="_blank" rel="noopener noreferrer">github.com/selimozten/terazi</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  const CATEGORY_LABELS = { core: "Core", tool: "Tool", fin: "Fin", legal: "Legal" };
+  const COL_KEYS = ["average", "core", "tool", "fin", "legal"];
+
+  let data = null;
+  let sortKey = "average";
+  let sortAsc = false;
+  let expandedRows = new Set();
+
+  /* ---- Helpers ---- */
+
+  function pillColor(score) {
+    if (score === null || score === undefined) return null;
+    const h = score * 120;
+    const s = getComputedStyle(document.documentElement).getPropertyValue("--pill-sat").trim() || "80%";
+    const l = getComputedStyle(document.documentElement).getPropertyValue("--pill-lit").trim() || "35%";
+    return "hsl(" + h + ", " + s + ", " + l + ")";
+  }
+
+  function formatScore(v) {
+    if (v === null || v === undefined) return null;
+    return v.toFixed(3);
+  }
+
+  function makePill(score) {
+    if (score === null || score === undefined) {
+      return '<span class="pill pill-na">--</span>';
+    }
+    var bg = pillColor(score);
+    return '<span class="pill" style="background:' + bg + '">' + formatScore(score) + '</span>';
+  }
+
+  function prettySub(name) {
+    return name.replace(/_/g, " ").replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+  }
+
+  function chevronSvg() {
+    return '<span class="chevron"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>';
+  }
+
+  /* ---- Sort ---- */
+
+  function getModelScore(model, key) {
+    if (key === "average") return model.average != null ? model.average : -Infinity;
+    if (model.results && model.results[key] && model.results[key].overall != null) {
+      return model.results[key].overall;
+    }
+    return -Infinity;
+  }
+
+  function sortModels(models) {
+    var sorted = models.slice();
+    sorted.sort(function (a, b) {
+      var va = getModelScore(a, sortKey);
+      var vb = getModelScore(b, sortKey);
+      if (va === vb) return 0;
+      return sortAsc ? va - vb : vb - va;
+    });
+    return sorted;
+  }
+
+  /* ---- Render ---- */
+
+  function render() {
+    var app = document.getElementById("app");
+    if (!data || !data.models || data.models.length === 0) {
+      app.innerHTML = '<div class="error-state">No model data available.</div>';
+      return;
+    }
+
+    var categories = data.categories || Object.keys(CATEGORY_LABELS);
+    var sorted = sortModels(data.models);
+
+    var html = '<div class="table-wrap"><table>';
+
+    /* Colgroup */
+    html += '<colgroup>';
+    html += '<col class="col-rank">';
+    html += '<col class="col-model">';
+    html += '<col class="col-score">';
+    for (var ci = 0; ci < categories.length; ci++) {
+      html += '<col class="col-score">';
+    }
+    html += '</colgroup>';
+
+    /* Thead */
+    html += '<thead><tr>';
+    html += '<th>#</th>';
+    html += '<th class="col-model-th' + (sortKey === "name" ? " sort-active" : "") + '" data-sort="name">Model<span class="sort-arrow">' + (sortKey === "name" ? (sortAsc ? "&#9650;" : "&#9660;") : "") + '</span></th>';
+    html += '<th class="' + (sortKey === "average" ? "sort-active" : "") + '" data-sort="average">Average<span class="sort-arrow">' + (sortKey === "average" ? (sortAsc ? "&#9650;" : "&#9660;") : "") + '</span></th>';
+    for (var ci = 0; ci < categories.length; ci++) {
+      var cat = categories[ci];
+      var label = CATEGORY_LABELS[cat] || cat.charAt(0).toUpperCase() + cat.slice(1);
+      html += '<th class="' + (sortKey === cat ? "sort-active" : "") + '" data-sort="' + cat + '">' + label + '<span class="sort-arrow">' + (sortKey === cat ? (sortAsc ? "&#9650;" : "&#9660;") : "") + '</span></th>';
+    }
+    html += '</tr></thead>';
+
+    /* Tbody */
+    html += '<tbody>';
+    for (var i = 0; i < sorted.length; i++) {
+      var m = sorted[i];
+      var rank = i + 1;
+      var isExpanded = expandedRows.has(m.name);
+      var rankClass = rank <= 3 ? " rank-" + rank : "";
+
+      html += '<tr class="model-row' + (isExpanded ? " expanded" : "") + '" data-model="' + escHtml(m.name) + '">';
+      html += '<td class="rank-cell' + rankClass + '">' + rank + '</td>';
+      html += '<td class="model-cell"><div class="model-name-wrap">' + chevronSvg() + escHtml(m.name) + '</div></td>';
+      html += '<td class="score-cell">' + makePill(m.average) + '</td>';
+      for (var ci = 0; ci < categories.length; ci++) {
+        var cat = categories[ci];
+        var sc = (m.results && m.results[cat]) ? m.results[cat].overall : null;
+        html += '<td class="score-cell">' + makePill(sc) + '</td>';
+      }
+      html += '</tr>';
+
+      /* Detail row */
+      var colSpan = 3 + categories.length;
+      html += '<tr class="detail-row' + (isExpanded ? " open" : "") + '">';
+      html += '<td colspan="' + colSpan + '">';
+      html += '<div class="detail-inner"><div class="detail-grid">';
+      for (var ci = 0; ci < categories.length; ci++) {
+        var cat = categories[ci];
+        var catResult = m.results ? m.results[cat] : null;
+        if (!catResult) continue;
+        var label = CATEGORY_LABELS[cat] || cat.charAt(0).toUpperCase() + cat.slice(1);
+        html += '<div class="detail-category">';
+        html += '<div class="detail-category-header"><span>' + label + '</span><span class="cat-overall">' + makePill(catResult.overall) + '</span></div>';
+        html += '<div class="detail-sub-list">';
+        var subs = catResult.per_subcategory;
+        if (subs) {
+          var subKeys = Object.keys(subs);
+          subKeys.sort();
+          for (var si = 0; si < subKeys.length; si++) {
+            html += '<div class="detail-sub-row">';
+            html += '<span class="detail-sub-name">' + escHtml(prettySub(subKeys[si])) + '</span>';
+            html += '<span class="detail-sub-score">' + makePill(subs[subKeys[si]]) + '</span>';
+            html += '</div>';
+          }
+        }
+        html += '</div></div>';
+      }
+      html += '</div></div></td></tr>';
+    }
+    html += '</tbody></table></div>';
+
+    app.innerHTML = html;
+    bindEvents();
+  }
+
+  function escHtml(s) {
+    var d = document.createElement("div");
+    d.appendChild(document.createTextNode(s));
+    return d.innerHTML;
+  }
+
+  /* ---- Events ---- */
+
+  function bindEvents() {
+    /* Sort headers */
+    var ths = document.querySelectorAll("thead th[data-sort]");
+    for (var i = 0; i < ths.length; i++) {
+      ths[i].addEventListener("click", handleSort);
+    }
+
+    /* Expand rows */
+    var rows = document.querySelectorAll("tr.model-row");
+    for (var i = 0; i < rows.length; i++) {
+      rows[i].addEventListener("click", handleExpand);
+    }
+  }
+
+  function handleSort(e) {
+    var key = e.currentTarget.getAttribute("data-sort");
+    if (key === sortKey) {
+      sortAsc = !sortAsc;
+    } else {
+      sortKey = key;
+      sortAsc = key === "name" ? true : false;
+    }
+    render();
+  }
+
+  function handleExpand(e) {
+    var name = e.currentTarget.getAttribute("data-model");
+    if (expandedRows.has(name)) {
+      expandedRows.delete(name);
+    } else {
+      expandedRows.add(name);
+    }
+    render();
+  }
+
+  /* ---- Name sorting ---- */
+
+  var _origGetModelScore = getModelScore;
+  getModelScore = function (model, key) {
+    if (key === "name") return model.name.toLowerCase();
+    return _origGetModelScore(model, key);
+  };
+
+  var _origSortModels = sortModels;
+  sortModels = function (models) {
+    if (sortKey === "name") {
+      var sorted = models.slice();
+      sorted.sort(function (a, b) {
+        var va = a.name.toLowerCase();
+        var vb = b.name.toLowerCase();
+        if (va < vb) return sortAsc ? -1 : 1;
+        if (va > vb) return sortAsc ? 1 : -1;
+        return 0;
+      });
+      return sorted;
+    }
+    return _origSortModels(models);
+  };
+
+  /* ---- Footer timestamp ---- */
+
+  function updateFooter() {
+    var el = document.getElementById("last-updated");
+    if (!data || !data.generated_at) {
+      el.textContent = "";
+      return;
+    }
+    var d = new Date(data.generated_at);
+    var formatted = d.toLocaleDateString("en-US", {
+      year: "numeric", month: "long", day: "numeric"
+    });
+    var time = d.toLocaleTimeString("en-US", {
+      hour: "2-digit", minute: "2-digit"
+    });
+    el.textContent = "Last updated: " + formatted + " at " + time;
+  }
+
+  /* ---- Init ---- */
+
+  fetch("data.json")
+    .then(function (res) {
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return res.json();
+    })
+    .then(function (json) {
+      data = json;
+      updateFooter();
+      render();
+    })
+    .catch(function (err) {
+      document.getElementById("app").innerHTML =
+        '<div class="error-state">Failed to load data.json: ' + escHtml(err.message) + '</div>';
+    });
+})();
+</script>
+</body>
+</html>
