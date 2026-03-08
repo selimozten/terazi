@@ -18,8 +18,8 @@ console = Console()
 
 DEFAULT_MODEL_ID = "us.anthropic.claude-opus-4-6-v1"
 DEFAULT_REGION = "us-east-1"
-MAX_RETRIES = 5
-BASE_DELAY = 2.0
+MAX_RETRIES = 8
+BASE_DELAY = 5.0
 
 
 class Example(BaseModel):
@@ -213,6 +213,7 @@ class BaseGenerator(ABC):
                         generated += 1
 
                     progress.update(task, completed=generated, description=f"{subcat}: {generated}/{target}")
+                    time.sleep(1)  # brief pause between batches to ease rate limits
 
         elapsed = time.monotonic() - start_time
         minutes, seconds = divmod(int(elapsed), 60)
