@@ -213,7 +213,7 @@ class BaseGenerator(ABC):
                         generated += 1
 
                     progress.update(task, completed=generated, description=f"{subcat}: {generated}/{target}")
-                    time.sleep(1)  # brief pause between batches to ease rate limits
+                    time.sleep(10)  # pause between batches to ease rate limits
 
         elapsed = time.monotonic() - start_time
         minutes, seconds = divmod(int(elapsed), 60)
