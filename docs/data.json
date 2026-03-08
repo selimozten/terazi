@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-08T17:04:33.259533+00:00",
+  "generated_at": "2026-03-08T18:37:49.546790+00:00",
   "categories": [
     "core",
     "tool",
@@ -84,6 +84,57 @@
         }
       },
       "average": 0.4854
+    },
+    {
+      "name": "minimax/minimax-m2.5",
+      "results": {
+        "core": {
+          "overall": 0.5165,
+          "total": 500,
+          "timestamp": 1772991961,
+          "per_subcategory": {
+            "reading_comprehension": 0.4904,
+            "common_sense": 0.96,
+            "grammar": 0.2963,
+            "translation": 0.3945,
+            "summarization": 0.4411
+          }
+        },
+        "fin": {
+          "overall": 0.4252,
+          "total": 500,
+          "timestamp": 1772992625,
+          "per_subcategory": {
+            "document_comprehension": 0.3158,
+            "sentiment": 0.752,
+            "numerical_reasoning": 0.3036,
+            "term_understanding": 0.3295
+          }
+        },
+        "legal": {
+          "overall": 0.4034,
+          "total": 478,
+          "timestamp": 1772995064,
+          "per_subcategory": {
+            "document_comprehension": 0.4003,
+            "regulatory_compliance": 0.3767,
+            "case_reasoning": 0.3318,
+            "clause_extraction": 0.5559
+          }
+        },
+        "tool": {
+          "overall": 0.5939,
+          "total": 507,
+          "timestamp": 1772992249,
+          "per_subcategory": {
+            "api_call": 0.6042,
+            "multi_step": 0.6453,
+            "parameter_extraction": 0.6685,
+            "error_recovery": 0.2552
+          }
+        }
+      },
+      "average": 0.4848
     },
     {
       "name": "liquid/lfm-2-24b-a2b",

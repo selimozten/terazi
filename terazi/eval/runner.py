@@ -82,9 +82,12 @@ class APIBackend(ModelBackend):
     ) -> None:
         import openai
 
+        import httpx
+
         resolved_key = api_key or os.environ.get("OPENROUTER_API_KEY", "")
-        self.client = openai.OpenAI(base_url=base_url, api_key=resolved_key)
-        self.async_client = openai.AsyncOpenAI(base_url=base_url, api_key=resolved_key)
+        http_timeout = httpx.Timeout(120.0, connect=30.0)
+        self.client = openai.OpenAI(base_url=base_url, api_key=resolved_key, timeout=http_timeout)
+        self.async_client = openai.AsyncOpenAI(base_url=base_url, api_key=resolved_key, timeout=http_timeout)
         self.model_name = model_name
         self.max_tokens = max_tokens
         self.max_retries = max_retries
@@ -119,18 +122,23 @@ class APIBackend(ModelBackend):
         messages = self._build_messages(prompt, system_prompt)
         for attempt in range(self.max_retries):
             try:
-                response = await self.async_client.chat.completions.create(
-                    model=self.model_name,
-                    messages=messages,
-                    max_tokens=self.max_tokens,
-                    temperature=0,
+                response = await asyncio.wait_for(
+                    self.async_client.chat.completions.create(
+                        model=self.model_name,
+                        messages=messages,
+                        max_tokens=self.max_tokens,
+                        temperature=0,
+                    ),
+                    timeout=120.0,
                 )
                 return response.choices[0].message.content or ""
-            except Exception as e:
+            except (asyncio.TimeoutError, Exception) as e:
                 if attempt < self.max_retries - 1:
                     delay = 2 ** attempt
                     await asyncio.sleep(delay)
                     continue
+                if isinstance(e, asyncio.TimeoutError):
+                    return ""
                 raise
         return ""
 
