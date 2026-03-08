@@ -42,7 +42,7 @@ class BaseGenerator(ABC):
         output_dir: Path = Path("data"),
         model_id: str = DEFAULT_MODEL_ID,
         region: str = DEFAULT_REGION,
-        max_tokens: int = 8192,
+        max_tokens: int = 4096,
         temperature: float = 1.0,
         api_key: str | None = None,
     ) -> None:
@@ -87,7 +87,7 @@ class BaseGenerator(ABC):
 
         for attempt in range(MAX_RETRIES):
             try:
-                response = httpx.post(url, json=payload, headers=headers, timeout=120)
+                response = httpx.post(url, json=payload, headers=headers, timeout=240)
                 if response.status_code == 429:
                     delay = BASE_DELAY * (2**attempt)
                     console.print(f"[yellow]Rate limited, retrying in {delay:.0f}s...[/yellow]")
@@ -213,7 +213,7 @@ class BaseGenerator(ABC):
                         generated += 1
 
                     progress.update(task, completed=generated, description=f"{subcat}: {generated}/{target}")
-                    time.sleep(10)  # pause between batches to ease rate limits
+                    time.sleep(3)  # pause between batches to ease rate limits
 
         elapsed = time.monotonic() - start_time
         minutes, seconds = divmod(int(elapsed), 60)
