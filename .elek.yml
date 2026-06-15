@@ -1,0 +1,17 @@
+max_council_changed_lines: 1200
+max_crosscheck_changed_lines: 3000
+
+severity_threshold: important
+
+knowledge_paths:
+  - AGENTS.md
+  - CONTRIBUTING.md
+  - docs/ARCHITECTURE.md
+
+ignore_paths:
+  - docs/**
+  - "*.md"
+
+instructions:
+  - Treat auth, permissions, data deletion, migrations, and billing changes as high-risk.
+  - Require tests for parser, config, and security-sensitive behavior changes.
